@@ -46,41 +46,29 @@ struct GoogleMapView: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: GMSMapView, context: Context) {
-        // Only update camera if it's significantly different to avoid stuttering
         let currentPos = mapView.camera.target
         let distance = CLLocation(latitude: currentPos.latitude, longitude: currentPos.longitude)
             .distance(from: CLLocation(latitude: region.latitude, longitude: region.longitude))
-        
+
         if distance > 100 {
             let camera = GMSCameraPosition.camera(withLatitude: region.latitude, longitude: region.longitude, zoom: 15.0)
             mapView.animate(to: camera)
         }
-        
-        // Efficient marker update: clear and recreate (In a real app, diffing is better)
+
         mapView.clear()
-        
+
         for store in stores {
             let marker = GMSMarker()
             marker.position = store.clLocationCoordinate
-            marker.userData = store.id // Store ID for retrieval on tap
-            
-            // Apply custom styling based on StoreCategory
+            marker.userData = store.id
+
             let isSelected = selectedStore?.id == store.id
-            marker.iconView = createCustomMarkerView(for: store, isSelected: isSelected)
-            
+            let renderer = ImageRenderer(content: StorePinView(store: store, isSelected: isSelected))
+            renderer.scale = 3.0
+            marker.icon = renderer.uiImage
+            marker.groundAnchor = CGPoint(x: 0.5, y: 1.0)
+
             marker.map = mapView
         }
-    }
-    
-    private func createCustomMarkerView(for store: Store, isSelected: Bool) -> UIView {
-        // Native SwiftUI hosting inside a UIView for custom Google Maps markers
-        let controller = UIHostingController(rootView: StorePinView(store: store, isSelected: isSelected))
-        controller.view.backgroundColor = .clear
-        
-        // Adjust size based on selection state
-        let size: CGFloat = isSelected ? 60 : 40
-        controller.view.frame = CGRect(x: 0, y: 0, width: size, height: size)
-        
-        return controller.view
     }
 }

@@ -155,6 +155,32 @@ class AuthViewModel: NSObject, ObservableObject {
         }
     }
     
+    // MARK: - Update Display Name
+    func updateDisplayName(_ name: String) async throws {
+        guard FirebaseApp.app() != nil, let user = Auth.auth().currentUser else {
+            await MainActor.run {
+                userProfile = UserProfile(
+                    uid: userProfile?.uid ?? "mock",
+                    displayName: name,
+                    email: userProfile?.email ?? "",
+                    totalContributions: userProfile?.totalContributions ?? 0
+                )
+            }
+            return
+        }
+        let request = user.createProfileChangeRequest()
+        request.displayName = name
+        try await request.commitChanges()
+        await MainActor.run {
+            userProfile = UserProfile(
+                uid: user.uid,
+                displayName: name,
+                email: user.email ?? "",
+                totalContributions: userProfile?.totalContributions ?? 0
+            )
+        }
+    }
+
     // MARK: - Sign Out
     func signOut() {
         do {

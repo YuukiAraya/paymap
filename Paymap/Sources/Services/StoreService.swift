@@ -1,9 +1,10 @@
 import Foundation
+import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 
 class StoreService {
-    private let db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
     
     // MARK: - Fetch stores near a location (from Firestore cache)
     func fetchStores(near latitude: Double, longitude: Double) async throws -> [Store] {
@@ -97,6 +98,17 @@ class StoreService {
         }
     }
     
+    // MARK: - Fetch stores registered by a specific user
+    func fetchStoresByUser(uid: String) async throws -> [Store] {
+        guard FirebaseApp.app() != nil else { return [] }
+        let snapshot = try await db.collection("stores")
+            .whereField("registeredByUid", isEqualTo: uid)
+            .getDocuments()
+        return snapshot.documents.compactMap { doc in
+            try? doc.data(as: StoreDTO.self).toStore(id: doc.documentID)
+        }
+    }
+
     // MARK: - Fetch payment reports for a store
     func fetchPaymentReports(for storeId: String) async throws -> [PaymentReport] {
         let snapshot = try await db
@@ -140,7 +152,9 @@ struct StoreDTO: Codable {
     let longitude: Double
     let confirmedPaymentMethods: [String]
     let lastUpdated: Date
-    
+    let address: String?
+    let registeredByUid: String?
+
     init(from store: Store) {
         self.name = store.name
         self.category = store.category.rawValue
@@ -148,8 +162,10 @@ struct StoreDTO: Codable {
         self.longitude = store.location.longitude
         self.confirmedPaymentMethods = store.supportedPaymentMethods
         self.lastUpdated = Date()
+        self.address = store.address
+        self.registeredByUid = store.registeredByUid
     }
-    
+
     func toStore(id: String) -> Store? {
         guard let category = StoreCategory(rawValue: category) else { return nil }
         return Store(
@@ -157,7 +173,9 @@ struct StoreDTO: Codable {
             name: name,
             location: Store.Coordinate(latitude: latitude, longitude: longitude),
             category: category,
-            supportedPaymentMethods: confirmedPaymentMethods
+            supportedPaymentMethods: confirmedPaymentMethods,
+            address: address,
+            registeredByUid: registeredByUid
         )
     }
 }

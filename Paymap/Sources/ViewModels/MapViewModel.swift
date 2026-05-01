@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import FirebaseCore
 import FirebaseAuth
 
 class MapViewModel: ObservableObject {
@@ -22,7 +23,7 @@ class MapViewModel: ObservableObject {
         Task {
             do {
                 // Try Firestore first; fall back to mock Places service
-                if Auth.auth().currentUser != nil {
+                if FirebaseApp.app() != nil, Auth.auth().currentUser != nil {
                     let firestoreStores = try await storeService.fetchStores(
                         near: region.latitude,
                         longitude: region.longitude
@@ -48,7 +49,7 @@ class MapViewModel: ObservableObject {
     func submitConsensusReport(for store: Store, methods: [String]) {
         Task {
             do {
-                if Auth.auth().currentUser != nil {
+                if FirebaseApp.app() != nil, Auth.auth().currentUser != nil {
                     // Real Firestore submission for each method
                     let allMethods = ["PayPay", "Suica", "Credit Card", "LINE Pay", "QUICPay", "iD", "現金のみ", "Coke ON Pay"]
                     for method in allMethods {

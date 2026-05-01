@@ -4,22 +4,14 @@ struct ContentView: View {
     var body: some View {
         TabView {
             MapView()
-                .tabItem {
-                    Image(systemName: "map.fill")
-                    Text("マップ")
-                }
-            
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("マイページ")
-                }
-        }
-    }
-}
+                .tabItem { Label("マップ", systemImage: "map.fill") }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+            StoreRegisterView()
+                .tabItem { Label("店舗登録", systemImage: "plus.circle.fill") }
+
+            ProfileView()
+                .tabItem { Label("マイページ", systemImage: "person.fill") }
+        }
+        .tint(Color.premiumEmerald)
     }
 }

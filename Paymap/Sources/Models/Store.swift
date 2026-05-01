@@ -7,54 +7,69 @@ struct Store: Identifiable, Codable {
     let name: String
     let location: Coordinate
     let category: StoreCategory
-    var supportedPaymentMethods: [String] // Array of PaymentMethod IDs
-    
+    var supportedPaymentMethods: [String]
+    var address: String?
+    var registeredByUid: String?
+
     struct Coordinate: Codable {
         let latitude: Double
         let longitude: Double
     }
-    
+
     var clLocationCoordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+    }
+
+    var googleMapsURL: URL? {
+        let q = "\(location.latitude),\(location.longitude)"
+        guard let encoded = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        return URL(string: "https://www.google.com/maps/search/?api=1&query=\(encoded)")
     }
 }
 
 enum StoreCategory: String, Codable, CaseIterable {
     case convenienceStore = "コンビニ"
-    case cafe = "カフェ"
-    case vendingMachine = "自動販売機"
-    case drugStore = "ドラッグストア"
-    case restaurant = "レストラン"
-    case other = "その他"
-    
-    var displayName: String {
-        self.rawValue
-    }
-    
+    case cafe             = "カフェ"
+    case restaurant       = "レストラン"
+    case izakaya          = "居酒屋"
+    case fastFood         = "ファストフード"
+    case supermarket      = "スーパー"
+    case drugStore        = "ドラッグストア"
+    case hotel            = "ホテル"
+    case vendingMachine   = "自動販売機"
+    case other            = "その他"
+
+    var displayName: String { rawValue }
+
     var iconName: String {
         switch self {
         case .convenienceStore: return "cart.fill"
-        case .cafe: return "cup.and.saucer.fill"
-        case .vendingMachine: return "takeoutbag.and.cup.and.straw.fill"
-        case .drugStore: return "cross.case.fill"
-        case .restaurant: return "fork.knife"
-        case .other: return "mappin"
+        case .cafe:             return "cup.and.saucer.fill"
+        case .restaurant:       return "fork.knife"
+        case .izakaya:          return "wineglass.fill"
+        case .fastFood:         return "bag.fill"
+        case .supermarket:      return "basket.fill"
+        case .drugStore:        return "cross.case.fill"
+        case .hotel:            return "bed.double.fill"
+        case .vendingMachine:   return "takeoutbag.and.cup.and.straw.fill"
+        case .other:            return "mappin"
         }
     }
-    
+
     var color: Color {
         switch self {
         case .convenienceStore: return .orange
-        case .cafe: return .brown
-        case .vendingMachine: return .cyan
-        case .drugStore: return .pink
-        case .restaurant: return .red
-        case .other: return Color.premiumNavy
+        case .cafe:             return .brown
+        case .restaurant:       return .red
+        case .izakaya:          return .purple
+        case .fastFood:         return Color(red: 0.85, green: 0.65, blue: 0.0)
+        case .supermarket:      return .green
+        case .drugStore:        return .pink
+        case .hotel:            return .indigo
+        case .vendingMachine:   return .cyan
+        case .other:            return Color.premiumNavy
         }
     }
-    
-    // For UIKit/Google Maps compatibility
-    var uiColor: UIColor {
-        UIColor(color)
-    }
+
+    var uiColor: UIColor { UIColor(color) }
 }
