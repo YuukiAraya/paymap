@@ -9,9 +9,6 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS.git
     from: 7.0.0
-  GoogleMaps:
-    url: https://github.com/googlemaps/ios-maps-sdk.git
-    from: 8.4.0
 targets:
   Paymap:
     type: application
@@ -37,5 +34,3 @@ targets:
         product: FirebaseFirestoreSwift
       - package: GoogleSignIn
         product: GoogleSignIn
-      - package: GoogleMaps
-        product: GoogleMaps

@@ -37,12 +37,11 @@ struct GoogleMapView: UIViewRepresentable {
     
     func makeUIView(context: Context) -> GMSMapView {
         let camera = GMSCameraPosition.camera(withLatitude: region.latitude, longitude: region.longitude, zoom: 15.0)
-        let mapView = GMSMapView.map(withFrame: .zero, camera: camera)
+        let options = GMSMapViewOptions()
+        options.camera = camera
+        options.frame = .zero
+        let mapView = GMSMapView(options: options)
         mapView.delegate = context.coordinator
-        
-        // Optional: Custom map styling could be applied here
-        // mapView.mapStyle = try? GMSMapStyle(jsonString: mapStyleJSON)
-        
         return mapView
     }
     

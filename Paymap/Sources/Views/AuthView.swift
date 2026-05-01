@@ -5,63 +5,98 @@ struct AuthView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     
     var body: some View {
-        VStack(spacing: 30) {
-            Spacer()
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color.premiumNavy, Color.premiumNavy.opacity(0.7)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            Image(systemName: "creditcard.circle.fill")
-                .resizable()
-                .frame(width: 100, height: 100)
-                .foregroundColor(.blue)
-            
-            Text("PayMap")
-                .font(.largeTitle)
-                .bold()
-            
-            Text("決済手段をシェアして、みんなでマップを作ろう！")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                // Apple Sign In Button
-                SignInWithAppleButton(
-                    onRequest: { request in
-                        // Setup request
-                    },
-                    onCompletion: { result in
-                        authViewModel.signInWithApple()
-                    }
-                )
-                .signInWithAppleButtonStyle(.black)
-                .frame(height: 50)
-                .padding(.horizontal)
+            VStack(spacing: 0) {
+                Spacer()
                 
-                // Google Sign In Button (Mock UI)
-                Button(action: {
-                    authViewModel.signInWithGoogle()
-                }) {
-                    HStack {
-                        Image(systemName: "g.circle.fill") // Placeholder for Google logo
-                        Text("Sign in with Google")
-                            .font(.headline)
+                // Logo & Title
+                VStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.premiumEmerald.opacity(0.2))
+                            .frame(width: 120, height: 120)
+                        Image(systemName: "creditcard.circle.fill")
+                            .resizable()
+                            .frame(width: 80, height: 80)
+                            .foregroundStyle(
+                                LinearGradient(colors: [Color.premiumEmerald, .white], startPoint: .top, endPoint: .bottom)
+                            )
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.white)
-                    .foregroundColor(.black)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
+                    
+                    Text("PayMap")
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text("決済手段をシェアして、\nみんなでマップを作ろう！")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal)
+                .padding(.bottom, 60)
+                
+                Spacer()
+                
+                // Login Buttons
+                VStack(spacing: 14) {
+                    if authViewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.2)
+                            .frame(height: 50)
+                    } else {
+                        // Apple Sign In
+                        SignInWithAppleButton(
+                            onRequest: { request in
+                                let appleRequest = authViewModel.startAppleSignIn()
+                                request.requestedScopes = appleRequest.requestedScopes
+                                request.nonce = appleRequest.nonce
+                            },
+                            onCompletion: { result in
+                                authViewModel.handleAppleSignIn(result: result)
+                            }
+                        )
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 52)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                        
+                        // Google Sign In
+                        Button(action: {
+                            authViewModel.signInWithGoogle()
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "globe")
+                                    .font(.headline)
+                                Text("Googleでサインイン")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.white)
+                            .foregroundColor(Color.premiumNavy)
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    if let error = authViewModel.errorMessage {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red.opacity(0.9))
+                            .padding(.horizontal)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.bottom, 50)
             }
-            .padding(.bottom, 50)
         }
-        .background(Color(.systemGroupedBackground))
     }
 }
