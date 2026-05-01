@@ -1,0 +1,480 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1E9B41961D6629D40963F407 /* PlacesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB704158B7AD60D7569624 /* PlacesService.swift */; };
+		21FE6EDAF2BBD0BF6655E532 /* PaymapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 927DEA081B9D16D500E6E425 /* PaymapApp.swift */; };
+		23C41A9143BE91163CCA7BAD /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FD6882EB5A5B4698AC0A682 /* DesignSystem.swift */; };
+		2659039CEC10ED03262C78E5 /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD9AAC567D616BD3613394 /* MapViewModel.swift */; };
+		268C7D193AAC6B0243285959 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE84EC4B0BE25A1C27DFEFE /* ProfileView.swift */; };
+		2D73D53C74C2A383DFA488C8 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 8EACE56E76BB680DDB8C2BC3 /* FirebaseAuth */; };
+		2EEE77D38F4939F3ED2182CD /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 06A51487A71C9CC9CA998A48 /* GoogleMaps */; };
+		3812F5A6B27F22821084BB9B /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20C2C14D846FF91E1E01361 /* AuthView.swift */; };
+		3CF132581B778B342C291673 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F01FACF79F649731B1EA8E /* Store.swift */; };
+		68C4F0D66F0C8F4CE1458C68 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 1DE50EFC6AB77E94A14DB60D /* FirebaseFirestore */; };
+		8DCFF5AD5D08C0D9125359DD /* PaymentMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CB4BD462EA839BA1CF515 /* PaymentMethod.swift */; };
+		9F8435CD8178F25644B686EE /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D128B19B687115ED64498AF /* AuthViewModel.swift */; };
+		AA814114C25E5AF87DF4D9C0 /* GoogleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50587F73606621C16DE1065 /* GoogleMapView.swift */; };
+		BE840170DB933E3B5BD9789B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA261E1D694B5467B1F553F4 /* ContentView.swift */; };
+		E2855EF6E3D0DDD65EC06880 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C5FC3D3A3F68CAD374B4ECA3 /* FirebaseFirestoreSwift */; };
+		E6047CBCC2498278272EC204 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 544C2F9A8C87C6638604CCCE /* GoogleSignIn */; };
+		FCBD55B0429ED814E180D8CD /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3261A2EEB5116E43246BBB3 /* MapView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0FD6882EB5A5B4698AC0A682 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		2D128B19B687115ED64498AF /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		4FDD9AAC567D616BD3613394 /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
+		927DEA081B9D16D500E6E425 /* PaymapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymapApp.swift; sourceTree = "<group>"; };
+		9E4CB4BD462EA839BA1CF515 /* PaymentMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethod.swift; sourceTree = "<group>"; };
+		A3BB704158B7AD60D7569624 /* PlacesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesService.swift; sourceTree = "<group>"; };
+		B50587F73606621C16DE1065 /* GoogleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapView.swift; sourceTree = "<group>"; };
+		D3261A2EEB5116E43246BBB3 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
+		D834DC278F15DA9DDCB4501A /* Paymap.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Paymap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E20C2C14D846FF91E1E01361 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		F0F01FACF79F649731B1EA8E /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		FA261E1D694B5467B1F553F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FAE84EC4B0BE25A1C27DFEFE /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		789CCB0AA82783E98E484FBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2D73D53C74C2A383DFA488C8 /* FirebaseAuth in Frameworks */,
+				68C4F0D66F0C8F4CE1458C68 /* FirebaseFirestore in Frameworks */,
+				E2855EF6E3D0DDD65EC06880 /* FirebaseFirestoreSwift in Frameworks */,
+				E6047CBCC2498278272EC204 /* GoogleSignIn in Frameworks */,
+				2EEE77D38F4939F3ED2182CD /* GoogleMaps in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		02DE2B16CE67863A8D35858B = {
+			isa = PBXGroup;
+			children = (
+				F26291AE041FEBBA198561BC /* Paymap */,
+				729A0DEE9265E1A855D1350D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5CC5E634C334E4A48FA454C8 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				2D128B19B687115ED64498AF /* AuthViewModel.swift */,
+				4FDD9AAC567D616BD3613394 /* MapViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		729A0DEE9265E1A855D1350D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D834DC278F15DA9DDCB4501A /* Paymap.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7F71A6E9D24FE60EA087D561 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				0FD6882EB5A5B4698AC0A682 /* DesignSystem.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		8D4C82A82202428F3D6DA350 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A3BB704158B7AD60D7569624 /* PlacesService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B09BD18FCDB9179DCCD4E477 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				E15D5BA06D1A9138CF19F0D7 /* App */,
+				C370089BCFF2338C2AC46323 /* Models */,
+				8D4C82A82202428F3D6DA350 /* Services */,
+				7F71A6E9D24FE60EA087D561 /* Utils */,
+				5CC5E634C334E4A48FA454C8 /* ViewModels */,
+				F58E4F23AB0A8288C7E0D1B1 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		C370089BCFF2338C2AC46323 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9E4CB4BD462EA839BA1CF515 /* PaymentMethod.swift */,
+				F0F01FACF79F649731B1EA8E /* Store.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E15D5BA06D1A9138CF19F0D7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				FA261E1D694B5467B1F553F4 /* ContentView.swift */,
+				927DEA081B9D16D500E6E425 /* PaymapApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F26291AE041FEBBA198561BC /* Paymap */ = {
+			isa = PBXGroup;
+			children = (
+				B09BD18FCDB9179DCCD4E477 /* Sources */,
+			);
+			path = Paymap;
+			sourceTree = "<group>";
+		};
+		F58E4F23AB0A8288C7E0D1B1 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E20C2C14D846FF91E1E01361 /* AuthView.swift */,
+				B50587F73606621C16DE1065 /* GoogleMapView.swift */,
+				D3261A2EEB5116E43246BBB3 /* MapView.swift */,
+				FAE84EC4B0BE25A1C27DFEFE /* ProfileView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3177BB8A1098021636F25AB2 /* Paymap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 751FF17A23BDB401E538C269 /* Build configuration list for PBXNativeTarget "Paymap" */;
+			buildPhases = (
+				840CAAFB24FF58DF374C58BD /* Sources */,
+				789CCB0AA82783E98E484FBF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Paymap;
+			packageProductDependencies = (
+				8EACE56E76BB680DDB8C2BC3 /* FirebaseAuth */,
+				1DE50EFC6AB77E94A14DB60D /* FirebaseFirestore */,
+				C5FC3D3A3F68CAD374B4ECA3 /* FirebaseFirestoreSwift */,
+				544C2F9A8C87C6638604CCCE /* GoogleSignIn */,
+				06A51487A71C9CC9CA998A48 /* GoogleMaps */,
+			);
+			productName = Paymap;
+			productReference = D834DC278F15DA9DDCB4501A /* Paymap.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4DA472436EA0AF5F86A0A31C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 1FD711EE85DB87E9F39C4EBD /* Build configuration list for PBXProject "Paymap" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 02DE2B16CE67863A8D35858B;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EDE359F1FF60BE0A8BA99177 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				84765D8F14F512476F17469C /* XCRemoteSwiftPackageReference "ios-maps-sdk" */,
+				1D79F02396CBFFCB93420D6F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 729A0DEE9265E1A855D1350D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3177BB8A1098021636F25AB2 /* Paymap */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		840CAAFB24FF58DF374C58BD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3812F5A6B27F22821084BB9B /* AuthView.swift in Sources */,
+				9F8435CD8178F25644B686EE /* AuthViewModel.swift in Sources */,
+				BE840170DB933E3B5BD9789B /* ContentView.swift in Sources */,
+				23C41A9143BE91163CCA7BAD /* DesignSystem.swift in Sources */,
+				AA814114C25E5AF87DF4D9C0 /* GoogleMapView.swift in Sources */,
+				FCBD55B0429ED814E180D8CD /* MapView.swift in Sources */,
+				2659039CEC10ED03262C78E5 /* MapViewModel.swift in Sources */,
+				21FE6EDAF2BBD0BF6655E532 /* PaymapApp.swift in Sources */,
+				8DCFF5AD5D08C0D9125359DD /* PaymentMethod.swift in Sources */,
+				1E9B41961D6629D40963F407 /* PlacesService.swift in Sources */,
+				268C7D193AAC6B0243285959 /* ProfileView.swift in Sources */,
+				3CF132581B778B342C291673 /* Store.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		71F88C43E792726432517F42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A94697709FEAA3D248185CAA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PayMap;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csn.Paymap;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EAFF7297401053248FAC6A52 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PayMap;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csn.Paymap;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F8BB8719F2D879FBBF28770A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1FD711EE85DB87E9F39C4EBD /* Build configuration list for PBXProject "Paymap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8BB8719F2D879FBBF28770A /* Debug */,
+				71F88C43E792726432517F42 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		751FF17A23BDB401E538C269 /* Build configuration list for PBXNativeTarget "Paymap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A94697709FEAA3D248185CAA /* Debug */,
+				EAFF7297401053248FAC6A52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1D79F02396CBFFCB93420D6F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+		84765D8F14F512476F17469C /* XCRemoteSwiftPackageReference "ios-maps-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googlemaps/ios-maps-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.4.0;
+			};
+		};
+		EDE359F1FF60BE0A8BA99177 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.22.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		06A51487A71C9CC9CA998A48 /* GoogleMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 84765D8F14F512476F17469C /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
+			productName = GoogleMaps;
+		};
+		1DE50EFC6AB77E94A14DB60D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EDE359F1FF60BE0A8BA99177 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		544C2F9A8C87C6638604CCCE /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D79F02396CBFFCB93420D6F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		8EACE56E76BB680DDB8C2BC3 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EDE359F1FF60BE0A8BA99177 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		C5FC3D3A3F68CAD374B4ECA3 /* FirebaseFirestoreSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EDE359F1FF60BE0A8BA99177 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestoreSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 4DA472436EA0AF5F86A0A31C /* Project object */;
+}
