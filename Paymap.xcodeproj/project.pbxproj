@@ -20,7 +20,7 @@
 		68C4F0D66F0C8F4CE1458C68 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 1DE50EFC6AB77E94A14DB60D /* FirebaseFirestore */; };
 		825A12A2763E439F07019646 /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C00F8EC15DB5FD5AAB611A /* StoreService.swift */; };
 		8DCFF5AD5D08C0D9125359DD /* PaymentMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CB4BD462EA839BA1CF515 /* PaymentMethod.swift */; };
-		91E1F7136140186ACB2A5DE8 /* Pods_Paymap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FCD70702DA644C5A09BB9AE /* Pods_Paymap.framework */; };
+		9172B3DBA40EC8945508F698 /* Pods_Paymap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 064F1CD2D0D2E3C6385096D1 /* Pods_Paymap.framework */; };
 		9F8435CD8178F25644B686EE /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D128B19B687115ED64498AF /* AuthViewModel.swift */; };
 		A00F54DF414A08A034832405 /* ContributionRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F7ACC8B90FF2AEFCFEF676 /* ContributionRulesView.swift */; };
 		AA814114C25E5AF87DF4D9C0 /* GoogleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50587F73606621C16DE1065 /* GoogleMapView.swift */; };
@@ -34,13 +34,14 @@
 
 /* Begin PBXFileReference section */
 		04F7ACC8B90FF2AEFCFEF676 /* ContributionRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionRulesView.swift; sourceTree = "<group>"; };
-		0FCD70702DA644C5A09BB9AE /* Pods_Paymap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Paymap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		064F1CD2D0D2E3C6385096D1 /* Pods_Paymap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Paymap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0FD6882EB5A5B4698AC0A682 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		18CF46294E1916D937337F1C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1BE8037535148130E1463ABD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2D128B19B687115ED64498AF /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
-		3263FD1EE2454DA787E84A72 /* Pods-Paymap.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Paymap.release.xcconfig"; path = "Target Support Files/Pods-Paymap/Pods-Paymap.release.xcconfig"; sourceTree = "<group>"; };
+		42C6709EFC8B0BE4A72AA716 /* Pods-Paymap.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Paymap.release.xcconfig"; path = "Target Support Files/Pods-Paymap/Pods-Paymap.release.xcconfig"; sourceTree = "<group>"; };
 		47C00F8EC15DB5FD5AAB611A /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
+		4F7D343AE3969D01CA69A757 /* Pods-Paymap.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Paymap.debug.xcconfig"; path = "Target Support Files/Pods-Paymap/Pods-Paymap.debug.xcconfig"; sourceTree = "<group>"; };
 		4FDD9AAC567D616BD3613394 /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
 		73D104D0C8DA8394468691D3 /* StoreRegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRegisterView.swift; sourceTree = "<group>"; };
 		927DEA081B9D16D500E6E425 /* PaymapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymapApp.swift; sourceTree = "<group>"; };
@@ -49,12 +50,11 @@
 		B50587F73606621C16DE1065 /* GoogleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapView.swift; sourceTree = "<group>"; };
 		CA26E0319F61C56760E3DB04 /* BannerAdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerAdView.swift; sourceTree = "<group>"; };
 		D3261A2EEB5116E43246BBB3 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
-		D834DC278F15DA9DDCB4501A /* Paymap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Paymap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D834DC278F15DA9DDCB4501A /* Paymap.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Paymap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E20C2C14D846FF91E1E01361 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		F0F01FACF79F649731B1EA8E /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		FA261E1D694B5467B1F553F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FAE84EC4B0BE25A1C27DFEFE /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		FED44F7A50BC70281C1043A2 /* Pods-Paymap.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Paymap.debug.xcconfig"; path = "Target Support Files/Pods-Paymap/Pods-Paymap.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,7 +66,7 @@
 				68C4F0D66F0C8F4CE1458C68 /* FirebaseFirestore in Frameworks */,
 				E2855EF6E3D0DDD65EC06880 /* FirebaseFirestoreSwift in Frameworks */,
 				E6047CBCC2498278272EC204 /* GoogleSignIn in Frameworks */,
-				91E1F7136140186ACB2A5DE8 /* Pods_Paymap.framework in Frameworks */,
+				9172B3DBA40EC8945508F698 /* Pods_Paymap.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,17 +78,9 @@
 			children = (
 				F26291AE041FEBBA198561BC /* Paymap */,
 				729A0DEE9265E1A855D1350D /* Products */,
-				B7DB84976F22D75BA3FDF549 /* Pods */,
-				46E31159A49115DE7DE35894 /* Frameworks */,
+				D98062037A9DA3F706972C34 /* Pods */,
+				687F0170FBA2D3577E47793D /* Frameworks */,
 			);
-			sourceTree = "<group>";
-		};
-		46E31159A49115DE7DE35894 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				0FCD70702DA644C5A09BB9AE /* Pods_Paymap.framework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		5CC5E634C334E4A48FA454C8 /* ViewModels */ = {
@@ -98,6 +90,14 @@
 				4FDD9AAC567D616BD3613394 /* MapViewModel.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		687F0170FBA2D3577E47793D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				064F1CD2D0D2E3C6385096D1 /* Pods_Paymap.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		729A0DEE9265E1A855D1350D /* Products */ = {
@@ -138,15 +138,6 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		B7DB84976F22D75BA3FDF549 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				FED44F7A50BC70281C1043A2 /* Pods-Paymap.debug.xcconfig */,
-				3263FD1EE2454DA787E84A72 /* Pods-Paymap.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		C370089BCFF2338C2AC46323 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -154,6 +145,16 @@
 				F0F01FACF79F649731B1EA8E /* Store.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		D98062037A9DA3F706972C34 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				4F7D343AE3969D01CA69A757 /* Pods-Paymap.debug.xcconfig */,
+				42C6709EFC8B0BE4A72AA716 /* Pods-Paymap.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		E15D5BA06D1A9138CF19F0D7 /* App */ = {
@@ -196,11 +197,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 751FF17A23BDB401E538C269 /* Build configuration list for PBXNativeTarget "Paymap" */;
 			buildPhases = (
-				09BD769E1B7C271E8260B69C /* [CP] Check Pods Manifest.lock */,
+				62E5786206C4796B39346883 /* [CP] Check Pods Manifest.lock */,
 				840CAAFB24FF58DF374C58BD /* Sources */,
 				FF56FA544DB33CFD524D6925 /* Resources */,
 				789CCB0AA82783E98E484FBF /* Frameworks */,
-				C04FCBB240D6BF322AD3ED5E /* [CP] Copy Pods Resources */,
+				762ABE4620DC82BFBAE37239 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -225,6 +226,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 1FD711EE85DB87E9F39C4EBD /* Build configuration list for PBXProject "Paymap" */;
 			developmentRegion = en;
@@ -262,7 +265,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		09BD769E1B7C271E8260B69C /* [CP] Check Pods Manifest.lock */ = {
+		62E5786206C4796B39346883 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -284,7 +287,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C04FCBB240D6BF322AD3ED5E /* [CP] Copy Pods Resources */ = {
+		762ABE4620DC82BFBAE37239 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -292,13 +295,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Paymap/Pods-Paymap-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Paymap/Pods-Paymap-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -391,12 +390,11 @@
 		};
 		A94697709FEAA3D248185CAA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FED44F7A50BC70281C1043A2 /* Pods-Paymap.debug.xcconfig */;
+			baseConfigurationReference = 4F7D343AE3969D01CA69A757 /* Pods-Paymap.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W45DJ7XXL5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Paymap/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -413,12 +411,11 @@
 		};
 		EAFF7297401053248FAC6A52 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3263FD1EE2454DA787E84A72 /* Pods-Paymap.release.xcconfig */;
+			baseConfigurationReference = 42C6709EFC8B0BE4A72AA716 /* Pods-Paymap.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W45DJ7XXL5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Paymap/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

@@ -26,6 +26,9 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon
         UIApplicationSupportsIndirectInputEvents: true
+        NSLocationWhenInUseUsageDescription: "現在地周辺の店舗と決済手段を表示するために位置情報を使用します。"
+        NSLocationAlwaysAndWhenInUseUsageDescription: "現在地周辺の店舗と決済手段を表示するために位置情報を使用します。"
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UISupportedInterfaceOrientations~iphone:
           - UIInterfaceOrientationPortrait
