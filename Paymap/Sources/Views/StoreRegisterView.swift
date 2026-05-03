@@ -4,34 +4,34 @@ import GoogleMobileAds
 
 struct StoreRegisterView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var lm: LanguageManager
     @StateObject private var viewModel = StoreRegisterViewModel()
     @State private var showingSuccess = false
 
     var body: some View {
         NavigationView {
             Form {
-                // 店舗基本情報
-                Section(header: Text("店舗情報")) {
-                    TextField("店舗名（例：セブンイレブン 渋谷店）", text: $viewModel.storeName)
-                    Picker("カテゴリ", selection: $viewModel.selectedCategory) {
+                Section(header: Text(lm.s.storeInfoSection)) {
+                    TextField(lm.s.storeNamePlaceholder, text: $viewModel.storeName)
+                    TextField(lm.s.storeNameEnPlaceholder, text: $viewModel.storeNameEn)
+                    Picker(lm.s.categoryLabel, selection: $viewModel.selectedCategory) {
                         ForEach(StoreCategory.allCases, id: \.self) { category in
-                            Label(category.displayName, systemImage: category.iconName)
+                            Label(category.localizedName(lm.s), systemImage: category.iconName)
                                 .tag(category)
                         }
                     }
-                    TextField("住所（任意）", text: $viewModel.address)
+                    TextField(lm.s.addressPlaceholder, text: $viewModel.address)
                 }
 
-                // 決済手段
                 ForEach(PaymentCatalog.grouped, id: \.group) { section in
-                    Section(header: Text(section.group.rawValue)) {
+                    Section(header: Text(section.group.localizedName(lm.s))) {
                         ForEach(section.entries) { entry in
                             Button(action: { viewModel.toggle(entry.id) }) {
                                 HStack {
                                     Image(systemName: entry.iconName)
                                         .foregroundColor(Color.premiumNavy)
                                         .frame(width: 24)
-                                    Text(entry.displayName)
+                                    Text(PaymentCatalog.displayName(for: entry.id, l10n: lm.s))
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: viewModel.selectedPayments.contains(entry.id)
@@ -48,11 +48,9 @@ struct StoreRegisterView: View {
                 Section {
                     Button(action: submit) {
                         if viewModel.isSubmitting {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
+                            ProgressView().frame(maxWidth: .infinity)
                         } else {
-                            Text("店舗を登録する")
-                                .frame(maxWidth: .infinity)
+                            Text(lm.s.registerButton).frame(maxWidth: .infinity)
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
@@ -61,14 +59,14 @@ struct StoreRegisterView: View {
                     .listRowBackground(Color.clear)
                 }
             }
-            .navigationTitle("店舗を登録")
-            .alert("登録完了", isPresented: $showingSuccess) {
-                Button("OK") { viewModel.reset() }
+            .navigationTitle(lm.s.registerStoreTitle)
+            .alert(lm.s.registrationCompleteTitle, isPresented: $showingSuccess) {
+                Button(lm.s.okButton) { viewModel.reset() }
             } message: {
-                Text("「\(viewModel.storeName)」を登録しました。情報の提供ありがとうございます！")
+                Text(lm.s.registrationCompleteBody(viewModel.storeName))
             }
-            .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
+            .alert(lm.s.errorTitle, isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button(lm.s.okButton) { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
@@ -80,7 +78,6 @@ struct StoreRegisterView: View {
         Task {
             let success = await viewModel.submit(registeredByUid: uid)
             if success {
-                // 登録完了後にインタースティシャル広告を表示
                 await viewModel.showInterstitialAd()
                 showingSuccess = true
             }
@@ -92,6 +89,7 @@ struct StoreRegisterView: View {
 @MainActor
 class StoreRegisterViewModel: ObservableObject {
     @Published var storeName = ""
+    @Published var storeNameEn = ""
     @Published var address = ""
     @Published var selectedCategory: StoreCategory = .convenienceStore
     @Published var selectedPayments: Set<String> = []
@@ -99,6 +97,7 @@ class StoreRegisterViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let storeService = StoreService()
+    private let geocodingService = GeocodingService()
     private var interstitial: InterstitialAd?
     private let interstitialUnitID = "ca-app-pub-4490113823639458/8255863769"
 
@@ -139,13 +138,19 @@ class StoreRegisterViewModel: ObservableObject {
         isSubmitting = true
         defer { isSubmitting = false }
 
+        // 住所が入力されていれば英語に自動翻訳
+        let addressEnValue = address.isEmpty ? nil : await geocodingService.translateAddressToEnglish(address)
+
+        let trimmedNameEn = storeNameEn.trimmingCharacters(in: .whitespaces)
         let newStore = Store(
             id: UUID().uuidString,
             name: storeName.trimmingCharacters(in: .whitespaces),
-            location: Store.Coordinate(latitude: 35.6812, longitude: 139.7671), // 現在地取得は今後実装
+            nameEn: trimmedNameEn.isEmpty ? nil : trimmedNameEn,
+            location: Store.Coordinate(latitude: 35.6812, longitude: 139.7671),
             category: selectedCategory,
             supportedPaymentMethods: Array(selectedPayments),
             address: address.isEmpty ? nil : address,
+            addressEn: addressEnValue,
             registeredByUid: registeredByUid
         )
 
@@ -160,6 +165,7 @@ class StoreRegisterViewModel: ObservableObject {
 
     func reset() {
         storeName = ""
+        storeNameEn = ""
         address = ""
         selectedCategory = .convenienceStore
         selectedPayments = []

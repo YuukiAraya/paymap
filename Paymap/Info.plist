@@ -26,6 +26,8 @@
 	<string>ca-app-pub-4490113823639458~5211821465</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHumanReadableCopyright</key>
+	<string>© PayMap</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>現在地周辺の店舗と決済手段を表示するために位置情報を使用します。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

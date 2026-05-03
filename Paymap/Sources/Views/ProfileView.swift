@@ -4,13 +4,15 @@ import FirebaseCore
 
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var lm: LanguageManager
     @State private var showingEditProfile = false
     @State private var showingRegisteredStores = false
 
     var body: some View {
         NavigationView {
+            VStack(spacing: 0) {
             List {
-                // プロフィールヘッダー
+                // Profile header
                 Section {
                     HStack(spacing: 16) {
                         Button(action: { showingEditProfile = true }) {
@@ -25,80 +27,97 @@ struct ProfileView: View {
                             }
                         }
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(authViewModel.userProfile?.displayName ?? "ゲスト")
+                            Text(authViewModel.userProfile?.displayName ?? lm.s.guestName)
                                 .font(.headline)
                             Text(authViewModel.userProfile?.email ?? "")
                                 .font(.subheadline).foregroundColor(.secondary)
-                            Button("プロフィールを編集") { showingEditProfile = true }
+                            Button(lm.s.editProfileLink) { showingEditProfile = true }
                                 .font(.caption).foregroundColor(Color.premiumEmerald)
                         }
                     }
                     .padding(.vertical, 8)
                 }
 
-                // 実績・インセンティブ
-                Section(header: Text("実績・インセンティブ")) {
+                // Achievements
+                Section(header: Text(lm.s.achievementsSection)) {
                     HStack {
-                        Text("貢献ポイント")
+                        Text(lm.s.contributionPoints)
                         Spacer()
-                        Text("\(authViewModel.userProfile?.totalContributions ?? 0) pt")
+                        Text("\(authViewModel.userProfile?.totalContributions ?? 0) \(lm.s.pointsUnit)")
                             .bold().foregroundColor(Color.premiumEmerald)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("獲得バッジ").font(.subheadline)
+                        Text(lm.s.badgesLabel).font(.subheadline)
                         HStack(spacing: 16) {
-                            BadgeView(icon: "star.fill",  title: "初投稿",    color: .yellow)
-                            BadgeView(icon: "flame.fill", title: "10件達成",  color: .orange)
-                            BadgeView(icon: "crown.fill", title: "決済マスター", color: .gray).opacity(0.4)
+                            BadgeView(icon: "star.fill",  title: lm.s.brFirstPost, color: .yellow)
+                            BadgeView(icon: "flame.fill", title: lm.s.br10,        color: .orange)
+                            BadgeView(icon: "crown.fill", title: lm.s.brMaster,    color: .gray).opacity(0.4)
                         }
                     }
                     .padding(.vertical, 8)
 
                     NavigationLink(destination: ContributionRulesView()) {
-                        Label("貢献ポイントの獲得ルールを見る", systemImage: "questionmark.circle")
+                        Label(lm.s.rulesLink, systemImage: "questionmark.circle")
                             .foregroundColor(Color.premiumNavy)
                     }
                 }
 
-                // 自分が登録した店舗
-                Section(header: Text("登録した店舗")) {
+                // My registered stores
+                Section(header: Text(lm.s.registeredStoresSection)) {
                     NavigationLink(destination: MyRegisteredStoresView()) {
-                        Label("登録した店舗一覧", systemImage: "mappin.and.ellipse")
+                        Label(lm.s.viewRegisteredStores, systemImage: "mappin.and.ellipse")
                             .foregroundColor(Color.premiumNavy)
                     }
                 }
 
-                // プレミアムプラン
-                Section(header: Text("プレミアムプラン")) {
+                // Premium plan
+                Section(header: Text(lm.s.premiumSection)) {
                     NavigationLink(destination: PremiumFeatureView()) {
                         HStack {
                             Image(systemName: "sparkles").foregroundColor(.purple)
-                            Text("プレミアム機能の詳細を見る")
+                            Text(lm.s.viewPremiumDetails)
                                 .foregroundColor(.purple).bold()
                         }
                     }
                 }
 
-                // ログアウト
+                // Language
+                Section(header: Text(lm.s.languageSection)) {
+                    Picker("", selection: Binding(
+                        get: { lm.language },
+                        set: { lm.language = $0 }
+                    )) {
+                        ForEach(AppLanguage.allCases, id: \.self) { lang in
+                            Text(lang.displayName).tag(lang)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                // Logout
                 Section {
                     Button(action: { authViewModel.signOut() }) {
-                        Text("ログアウト").foregroundColor(.red)
+                        Text(lm.s.logoutButton).foregroundColor(.red)
                     }
                 }
             }
-            .navigationTitle("マイページ")
+            .navigationTitle(lm.s.myPageTitle)
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileView()
                     .environmentObject(authViewModel)
+                    .environmentObject(lm)
             }
+            AdBannerContainer(isPremium: authViewModel.userProfile.map { _ in false } ?? false)
+            } // VStack
         }
     }
 }
 
-// MARK: - プロフィール編集
+// MARK: - Edit Profile
 struct EditProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var lm: LanguageManager
     @Environment(\.dismiss) private var dismiss
     @State private var nickname = ""
     @State private var isSaving = false
@@ -108,14 +127,14 @@ struct EditProfileView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("アイコン")) {
+                Section(header: Text(lm.s.iconSection)) {
                     HStack {
                         Spacer()
                         VStack {
                             Image(systemName: "person.circle.fill")
                                 .resizable().frame(width: 80, height: 80)
                                 .foregroundColor(Color.premiumNavy)
-                            Button("写真を変更（準備中）") {}
+                            Button(lm.s.changePhotoDisabled) {}
                                 .font(.caption).foregroundColor(.secondary)
                                 .disabled(true)
                         }
@@ -124,25 +143,25 @@ struct EditProfileView: View {
                     .padding(.vertical, 8)
                 }
 
-                Section(header: Text("ニックネーム")) {
-                    TextField("ニックネームを入力", text: $nickname)
+                Section(header: Text(lm.s.nicknameSection)) {
+                    TextField(lm.s.nicknamePlaceholder, text: $nickname)
                 }
             }
-            .navigationTitle("プロフィール編集")
+            .navigationTitle(lm.s.editProfileTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") { dismiss() }
+                    Button(lm.s.cancelButton) { dismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") { save() }
+                    Button(lm.s.saveButton) { save() }
                         .bold()
                         .disabled(isSaving || nickname.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .onAppear { nickname = authViewModel.userProfile?.displayName ?? "" }
-            .alert("エラー", isPresented: $showingError) {
-                Button("OK") {}
+            .alert(lm.s.errorTitle, isPresented: $showingError) {
+                Button(lm.s.okButton) {}
             } message: { Text(errorMessage) }
         }
     }
@@ -162,20 +181,21 @@ struct EditProfileView: View {
     }
 }
 
-// MARK: - 登録した店舗一覧
+// MARK: - My Registered Stores
 struct MyRegisteredStoresView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var lm: LanguageManager
     @StateObject private var vm = MyStoresViewModel()
 
     var body: some View {
         Group {
             if vm.isLoading {
-                ProgressView("読み込み中…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView(lm.s.loadingLabel).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.stores.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "mappin.slash")
                         .font(.system(size: 48)).foregroundColor(.secondary)
-                    Text("まだ登録した店舗がありません")
+                    Text(lm.s.myStoresEmpty)
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -188,10 +208,10 @@ struct MyRegisteredStoresView: View {
                                 .foregroundColor(store.category.color)
                         }
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(store.name).font(.subheadline).bold()
-                            Text(store.category.displayName)
+                            Text(store.displayName(isEnglish: lm.isEnglish)).font(.subheadline).bold()
+                            Text(store.category.localizedName(lm.s))
                                 .font(.caption).foregroundColor(.secondary)
-                            if let address = store.address {
+                            if let address = store.displayAddress(isEnglish: lm.isEnglish) {
                                 Text(address).font(.caption2).foregroundColor(.secondary)
                             }
                         }
@@ -199,7 +219,7 @@ struct MyRegisteredStoresView: View {
                 }
             }
         }
-        .navigationTitle("登録した店舗")
+        .navigationTitle(lm.s.myStoresTitle)
         .onAppear {
             if let uid = authViewModel.userProfile?.uid {
                 vm.fetchMyStores(uid: uid)
@@ -241,32 +261,38 @@ struct BadgeView: View {
 
 // MARK: - Premium Feature View
 struct PremiumFeatureView: View {
+    @EnvironmentObject var lm: LanguageManager
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 Image(systemName: "crown.fill").resizable()
                     .frame(width: 80, height: 80).foregroundColor(.yellow).padding(.top, 40)
-                Text("PayMap Premium").font(.largeTitle).bold()
+                Text(lm.s.premiumTitle).font(.largeTitle).bold()
                 VStack(alignment: .leading, spacing: 20) {
-                    PremiumFeatureRow(icon: "eye.slash",      title: "広告非表示",
-                                      description: "マップや店舗詳細画面の広告がすべて非表示になります。")
-                    PremiumFeatureRow(icon: "line.3.horizontal.decrease.circle", title: "高度な絞り込み検索",
-                                      description: "「PayPayが使える × 深夜営業」など条件を組み合わせた検索が可能に。")
-                    PremiumFeatureRow(icon: "map.fill",       title: "オフラインマップ",
-                                      description: "電波の届かない地下の店舗でも決済手段を確認できます。")
-                    PremiumFeatureRow(icon: "mappin.circle",  title: "オリジナルマップピン",
-                                      description: "あなたのマップピンを特別なデザインにカスタマイズできます。")
+                    PremiumFeatureRow(icon: "eye.slash",
+                                      title: lm.s.premiumNoAds,
+                                      description: lm.s.premiumNoAdsDesc)
+                    PremiumFeatureRow(icon: "line.3.horizontal.decrease.circle",
+                                      title: lm.s.premiumSearch,
+                                      description: lm.s.premiumSearchDesc)
+                    PremiumFeatureRow(icon: "map.fill",
+                                      title: lm.s.premiumOffline,
+                                      description: lm.s.premiumOfflineDesc)
+                    PremiumFeatureRow(icon: "mappin.circle",
+                                      title: lm.s.premiumCustomPin,
+                                      description: lm.s.premiumCustomPinDesc)
                 }
                 .padding()
                 Button(action: { print("Upgrade tapped") }) {
-                    Text("月額 300円でアップグレード")
+                    Text(lm.s.premiumUpgrade)
                         .font(.headline).frame(maxWidth: .infinity).padding()
                         .background(Color.yellow).foregroundColor(.black).cornerRadius(12)
                 }
                 .padding(.horizontal)
             }
         }
-        .navigationTitle("プレミアムプラン")
+        .navigationTitle(lm.s.premiumSection)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

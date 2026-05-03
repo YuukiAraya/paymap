@@ -1,6 +1,7 @@
 name: Paymap
 options:
   bundleIdPrefix: com.csn
+  organizationName: PayMap
   createIntermediateGroups: true
 packages:
   Firebase:
@@ -22,6 +23,7 @@ targets:
       path: Paymap/Info.plist
       properties:
         CFBundleDisplayName: PayMap
+        NSHumanReadableCopyright: "© PayMap"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon

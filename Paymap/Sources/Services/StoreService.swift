@@ -147,22 +147,26 @@ struct PaymentReport {
 // Firestore DTO (Data Transfer Object) for Store
 struct StoreDTO: Codable {
     let name: String
+    let nameEn: String?
     let category: String
     let latitude: Double
     let longitude: Double
     let confirmedPaymentMethods: [String]
     let lastUpdated: Date
     let address: String?
+    let addressEn: String?
     let registeredByUid: String?
 
     init(from store: Store) {
         self.name = store.name
+        self.nameEn = store.nameEn
         self.category = store.category.rawValue
         self.latitude = store.location.latitude
         self.longitude = store.location.longitude
         self.confirmedPaymentMethods = store.supportedPaymentMethods
         self.lastUpdated = Date()
         self.address = store.address
+        self.addressEn = store.addressEn
         self.registeredByUid = store.registeredByUid
     }
 
@@ -171,10 +175,12 @@ struct StoreDTO: Codable {
         return Store(
             id: id,
             name: name,
+            nameEn: nameEn,
             location: Store.Coordinate(latitude: latitude, longitude: longitude),
             category: category,
             supportedPaymentMethods: confirmedPaymentMethods,
             address: address,
+            addressEn: addressEn,
             registeredByUid: registeredByUid
         )
     }

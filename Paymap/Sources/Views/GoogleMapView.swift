@@ -5,6 +5,7 @@ struct GoogleMapView: UIViewRepresentable {
     @Binding var stores: [Store]
     @Binding var selectedStore: Store?
     @Binding var region: CLLocationCoordinate2D
+    @EnvironmentObject var lm: LanguageManager
     
     class Coordinator: NSObject, GMSMapViewDelegate {
         var parent: GoogleMapView
@@ -63,7 +64,11 @@ struct GoogleMapView: UIViewRepresentable {
             marker.userData = store.id
 
             let isSelected = selectedStore?.id == store.id
-            let renderer = ImageRenderer(content: StorePinView(store: store, isSelected: isSelected))
+            let renderer = ImageRenderer(content: StorePinView(
+                store: store,
+                isSelected: isSelected,
+                displayName: store.displayName(isEnglish: lm.isEnglish)
+            ))
             renderer.scale = 3.0
             marker.icon = renderer.uiImage
             marker.groundAnchor = CGPoint(x: 0.5, y: 1.0)

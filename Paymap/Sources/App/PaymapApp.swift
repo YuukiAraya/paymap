@@ -23,6 +23,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct PaymapApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var languageManager = LanguageManager()
 
     init() {
         // Google Maps SDK
@@ -41,9 +42,11 @@ struct PaymapApp: App {
             if authViewModel.isAuthenticated {
                 ContentView()
                     .environmentObject(authViewModel)
+                    .environmentObject(languageManager)
             } else {
                 AuthView()
                     .environmentObject(authViewModel)
+                    .environmentObject(languageManager)
             }
         }
     }

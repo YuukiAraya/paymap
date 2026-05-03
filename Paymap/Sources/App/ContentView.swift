@@ -1,16 +1,18 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var lm: LanguageManager
+
     var body: some View {
         TabView {
             MapView()
-                .tabItem { Label("マップ", systemImage: "map.fill") }
+                .tabItem { Label(lm.s.tabMap, systemImage: "map.fill") }
 
             StoreRegisterView()
-                .tabItem { Label("店舗登録", systemImage: "plus.circle.fill") }
+                .tabItem { Label(lm.s.tabRegister, systemImage: "plus.circle.fill") }
 
             ProfileView()
-                .tabItem { Label("マイページ", systemImage: "person.fill") }
+                .tabItem { Label(lm.s.tabMyPage, systemImage: "person.fill") }
         }
         .tint(Color.premiumEmerald)
     }

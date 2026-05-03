@@ -22,10 +22,19 @@ enum PaymentCatalog {
         let iconName: String
 
         enum Group: String, CaseIterable {
-            case creditCard = "クレジットカード"
-            case qr         = "QRコード決済"
-            case ic         = "電子マネー・IC"
-            case other      = "その他"
+            case creditCard = "creditCard"
+            case qr         = "qr"
+            case ic         = "ic"
+            case other      = "other"
+
+            func localizedName(_ l10n: L10n) -> String {
+                switch self {
+                case .creditCard: return l10n.groupCreditCard
+                case .qr:         return l10n.groupQR
+                case .ic:         return l10n.groupIC
+                case .other:      return l10n.groupOther
+                }
+            }
         }
     }
 
@@ -52,11 +61,16 @@ enum PaymentCatalog {
         Entry(id: "id_payment",  displayName: "iD",               group: .ic, iconName: "wave.3.right"),
         Entry(id: "coke_on",     displayName: "Coke ON Pay",      group: .ic, iconName: "wave.3.right"),
         // その他
-        Entry(id: "cash_only",   displayName: "現金のみ",           group: .other, iconName: "yensign.circle"),
+        Entry(id: "cash_only",   displayName: "Cash only",          group: .other, iconName: "yensign.circle"),
     ]
 
     static func displayName(for id: String) -> String {
         all.first { $0.id == id }?.displayName ?? id
+    }
+
+    static func displayName(for id: String, l10n: L10n) -> String {
+        if id == "cash_only" { return l10n.paymentCashOnly }
+        return all.first { $0.id == id }?.displayName ?? id
     }
 
     static func iconName(for id: String) -> String {

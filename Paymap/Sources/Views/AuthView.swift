@@ -3,20 +3,36 @@ import AuthenticationServices
 
 struct AuthView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    
+    @EnvironmentObject var lm: LanguageManager
+
     var body: some View {
         ZStack {
-            // Background gradient
             LinearGradient(
                 gradient: Gradient(colors: [Color.premiumNavy, Color.premiumNavy.opacity(0.7)]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
+                // Language toggle (top-right)
+                HStack {
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { lm.language },
+                        set: { lm.language = $0 }
+                    )) {
+                        ForEach(AppLanguage.allCases, id: \.self) { lang in
+                            Text(lang.displayName).tag(lang)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 160)
+                    .padding()
+                }
+
                 Spacer()
-                
+
                 // Logo & Title
                 VStack(spacing: 16) {
                     ZStack {
@@ -30,20 +46,20 @@ struct AuthView: View {
                                 LinearGradient(colors: [Color.premiumEmerald, .white], startPoint: .top, endPoint: .bottom)
                             )
                     }
-                    
+
                     Text("PayMap")
                         .font(.system(size: 40, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                    
-                    Text("決済手段をシェアして、\nみんなでマップを作ろう！")
+
+                    Text(lm.s.appSubtitle)
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
                 .padding(.bottom, 60)
-                
+
                 Spacer()
-                
+
                 // Login Buttons
                 VStack(spacing: 14) {
                     if authViewModel.isLoading {
@@ -52,7 +68,6 @@ struct AuthView: View {
                             .scaleEffect(1.2)
                             .frame(height: 50)
                     } else {
-                        // Apple Sign In
                         SignInWithAppleButton(
                             onRequest: { request in
                                 let appleRequest = authViewModel.startAppleSignIn()
@@ -67,15 +82,12 @@ struct AuthView: View {
                         .frame(height: 52)
                         .cornerRadius(12)
                         .padding(.horizontal)
-                        
-                        // Google Sign In
-                        Button(action: {
-                            authViewModel.signInWithGoogle()
-                        }) {
+
+                        Button(action: { authViewModel.signInWithGoogle() }) {
                             HStack(spacing: 12) {
                                 Image(systemName: "globe")
                                     .font(.headline)
-                                Text("Googleでサインイン")
+                                Text(lm.s.signInWithGoogle)
                                     .font(.headline)
                             }
                             .frame(maxWidth: .infinity)
@@ -86,7 +98,7 @@ struct AuthView: View {
                         }
                         .padding(.horizontal)
                     }
-                    
+
                     if let error = authViewModel.errorMessage {
                         Text(error)
                             .font(.caption)
