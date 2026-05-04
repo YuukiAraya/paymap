@@ -11,6 +11,7 @@ struct Store: Identifiable, Codable {
     var supportedPaymentMethods: [String]
     var address: String?
     var addressEn: String?
+    var photoURL: String?
     var registeredByUid: String?
 
     struct Coordinate: Codable {

@@ -2,9 +2,14 @@ import SwiftUI
 import CoreLocation
 import GoogleMobileAds
 
+extension Notification.Name {
+    static let storeRegistered = Notification.Name("storeRegistered")
+}
+
 struct StoreRegisterView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var lm: LanguageManager
+    @EnvironmentObject var locationManager: LocationManager
     @StateObject private var viewModel = StoreRegisterViewModel()
     @State private var showingSuccess = false
 
@@ -75,10 +80,14 @@ struct StoreRegisterView: View {
 
     private func submit() {
         let uid = authViewModel.userProfile?.uid
+        let coordinate = locationManager.currentOrDefault
         Task {
-            let success = await viewModel.submit(registeredByUid: uid)
+            let success = await viewModel.submit(registeredByUid: uid, coordinate: coordinate)
             if success {
+                await authViewModel.addContributionPoints(30)
+                await authViewModel.checkExplorerBadge()
                 await viewModel.showInterstitialAd()
+                NotificationCenter.default.post(name: .storeRegistered, object: nil)
                 showingSuccess = true
             }
         }
@@ -101,9 +110,7 @@ class StoreRegisterViewModel: ObservableObject {
     private var interstitial: InterstitialAd?
     private let interstitialUnitID = "ca-app-pub-4490113823639458/8255863769"
 
-    init() {
-        loadInterstitial()
-    }
+    init() { loadInterstitial() }
 
     private func loadInterstitial() {
         Task {
@@ -134,23 +141,23 @@ class StoreRegisterViewModel: ObservableObject {
         else { selectedPayments.insert(id) }
     }
 
-    func submit(registeredByUid: String?) async -> Bool {
+    func submit(registeredByUid: String?, coordinate: CLLocationCoordinate2D) async -> Bool {
         isSubmitting = true
         defer { isSubmitting = false }
 
-        // 住所が入力されていれば英語に自動翻訳
         let addressEnValue = address.isEmpty ? nil : await geocodingService.translateAddressToEnglish(address)
-
         let trimmedNameEn = storeNameEn.trimmingCharacters(in: .whitespaces)
+
         let newStore = Store(
             id: UUID().uuidString,
             name: storeName.trimmingCharacters(in: .whitespaces),
             nameEn: trimmedNameEn.isEmpty ? nil : trimmedNameEn,
-            location: Store.Coordinate(latitude: 35.6812, longitude: 139.7671),
+            location: Store.Coordinate(latitude: coordinate.latitude, longitude: coordinate.longitude),
             category: selectedCategory,
             supportedPaymentMethods: Array(selectedPayments),
             address: address.isEmpty ? nil : address,
             addressEn: addressEnValue,
+            photoURL: nil,
             registeredByUid: registeredByUid
         )
 

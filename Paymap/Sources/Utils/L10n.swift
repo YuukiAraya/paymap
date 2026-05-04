@@ -63,6 +63,10 @@ struct L10n {
     let editProfileTitle: String
     let iconSection: String
     let changePhotoDisabled: String
+    let changePhoto: String
+    let storePhotoSection: String
+    let addPhoto: String
+    let uploadingPhoto: String
     let nicknameSection: String
     let nicknamePlaceholder: String
     let saveButton: String
@@ -75,6 +79,9 @@ struct L10n {
     // MARK: - Premium
     let premiumTitle: String
     let premiumUpgrade: String
+    let premiumRestorePurchases: String
+    let premiumPurchasing: String
+    let premiumActive: String
     let premiumNoAds: String
     let premiumNoAdsDesc: String
     let premiumSearch: String
@@ -125,8 +132,20 @@ struct L10n {
     let groupIC: String
     let groupOther: String
 
+    // MARK: - Points / Badges
+    let pointsEarnedFmt: String
+
+    // MARK: - Errors
+    let errorNotAuthenticated: String
+    let errorDatabasePrefix: String
+
     // MARK: - Payment Methods (only non-brand names need translation)
     let paymentCashOnly: String
+
+    // MARK: - Email Change
+    let emailSection: String
+    let emailPlaceholder: String
+    let emailChangeSuccess: String
 
     // MARK: - Misc
     let guestName: String
@@ -188,6 +207,10 @@ extension L10n {
         editProfileTitle: "プロフィール編集",
         iconSection: "アイコン",
         changePhotoDisabled: "写真を変更（準備中）",
+        changePhoto: "写真を変更",
+        storePhotoSection: "店舗写真",
+        addPhoto: "写真を追加",
+        uploadingPhoto: "アップロード中…",
         nicknameSection: "ニックネーム",
         nicknamePlaceholder: "ニックネームを入力",
         saveButton: "保存",
@@ -196,6 +219,9 @@ extension L10n {
         loadingLabel: "読み込み中…",
         premiumTitle: "PayMap Premium",
         premiumUpgrade: "月額 300円でアップグレード",
+        premiumRestorePurchases: "購入を復元",
+        premiumPurchasing: "購入中…",
+        premiumActive: "プレミアム有効中 ✓",
         premiumNoAds: "広告非表示",
         premiumNoAdsDesc: "マップや店舗詳細画面の広告がすべて非表示になります。",
         premiumSearch: "高度な絞り込み検索",
@@ -235,7 +261,13 @@ extension L10n {
         groupQR: "QRコード決済",
         groupIC: "電子マネー・IC",
         groupOther: "その他",
+        pointsEarnedFmt: "+%d pt獲得！",
+        errorNotAuthenticated: "ログインが必要です",
+        errorDatabasePrefix: "データベースエラー: ",
         paymentCashOnly: "現金のみ",
+        emailSection: "メールアドレス",
+        emailPlaceholder: "新しいメールアドレス",
+        emailChangeSuccess: "メールアドレスを変更しました",
         guestName: "ゲスト",
         okButton: "OK",
         errorTitle: "エラー",
@@ -294,6 +326,10 @@ extension L10n {
         editProfileTitle: "Edit Profile",
         iconSection: "Icon",
         changePhotoDisabled: "Change Photo (coming soon)",
+        changePhoto: "Change Photo",
+        storePhotoSection: "Store Photo",
+        addPhoto: "Add Photo",
+        uploadingPhoto: "Uploading…",
         nicknameSection: "Nickname",
         nicknamePlaceholder: "Enter a nickname",
         saveButton: "Save",
@@ -302,6 +338,9 @@ extension L10n {
         loadingLabel: "Loading…",
         premiumTitle: "PayMap Premium",
         premiumUpgrade: "Upgrade for ¥300 / month",
+        premiumRestorePurchases: "Restore Purchases",
+        premiumPurchasing: "Purchasing…",
+        premiumActive: "Premium Active ✓",
         premiumNoAds: "Ad-Free",
         premiumNoAdsDesc: "Remove all ads from the map and store detail screens.",
         premiumSearch: "Advanced Search",
@@ -341,7 +380,13 @@ extension L10n {
         groupQR: "QR Code Payment",
         groupIC: "IC / E-Money",
         groupOther: "Other",
+        pointsEarnedFmt: "+%d pts earned!",
+        errorNotAuthenticated: "Please sign in to continue.",
+        errorDatabasePrefix: "Database error: ",
         paymentCashOnly: "Cash only",
+        emailSection: "Email Address",
+        emailPlaceholder: "New email address",
+        emailChangeSuccess: "Email address updated",
         guestName: "Guest",
         okButton: "OK",
         errorTitle: "Error",

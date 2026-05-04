@@ -24,6 +24,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-4490113823639458~5211821465</string>
+	<key>GoogleMapsAPIKey</key>
+	<string>AIzaSyC5nAa-MuY8Ef1uG0bSYhl5nKdlXMrkpqw</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSHumanReadableCopyright</key>

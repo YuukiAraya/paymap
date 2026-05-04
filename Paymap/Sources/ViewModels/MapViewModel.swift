@@ -7,82 +7,75 @@ import FirebaseAuth
 class MapViewModel: ObservableObject {
     @Published var stores: [Store] = []
     @Published var selectedStore: Store?
-    @Published var region: CLLocationCoordinate2D?
     @Published var errorMessage: String?
-    
-    private let placesService: PlacesServiceProtocol
+
     private let storeService = StoreService()
-    
+    private let placesService: PlacesServiceProtocol
+
     init(placesService: PlacesServiceProtocol = PlacesService()) {
         self.placesService = placesService
     }
-    
-    // MARK: - Fetch stores
+
+    // MARK: - Fetch stores (Firestore GeoQuery → mock fallback)
     @MainActor
     func fetchStores(in region: CLLocationCoordinate2D) {
         Task {
             do {
-                // Try Firestore first; fall back to mock Places service
                 if FirebaseApp.app() != nil, Auth.auth().currentUser != nil {
-                    let firestoreStores = try await storeService.fetchStores(
-                        near: region.latitude,
-                        longitude: region.longitude
-                    )
-                    if !firestoreStores.isEmpty {
-                        self.stores = firestoreStores
+                    // 初回のみ新宿サンプルデータをシード（固定IDなので重複なし）
+                    if !UserDefaults.standard.bool(forKey: "shinjukuSeeded") {
+                        do {
+                            try await storeService.seedShinjukuStores()
+                            UserDefaults.standard.set(true, forKey: "shinjukuSeeded")
+                        } catch {
+                            // シード失敗時はフラグを立てず次回リトライ
+                        }
+                    }
+                    let result = try await storeService.fetchStores(
+                        near: region.latitude, longitude: region.longitude,
+                        radiusKm: 20.0)
+                    if !result.isEmpty {
+                        self.stores = result
                         return
                     }
                 }
-                // Fallback: mock data from PlacesService
-                let fetchedStores = try await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)
-                self.stores = fetchedStores
+                self.stores = try await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)
             } catch {
                 self.errorMessage = error.localizedDescription
-                // Always fall back to mock data
-                let fallback = try? await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)
-                self.stores = fallback ?? []
+                self.stores = (try? await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)) ?? []
             }
         }
     }
-    
-    // MARK: - Submit 80% consensus report (real Firestore transaction)
-    func submitConsensusReport(for store: Store, methods: [String]) {
+
+    // MARK: - Submit 80% consensus report
+    func submitConsensusReport(for store: Store, methods: [String], uid: String? = nil) {
         Task {
             do {
                 if FirebaseApp.app() != nil, Auth.auth().currentUser != nil {
-                    // Real Firestore submission for each method
-                    let allMethods = ["PayPay", "Suica", "Credit Card", "LINE Pay", "QUICPay", "iD", "現金のみ", "Coke ON Pay"]
-                    for method in allMethods {
-                        let isSupported = methods.contains(method)
+                    // Use all catalog IDs (not hardcoded display names)
+                    let allIds = PaymentCatalog.all.map { $0.id }
+                    for id in allIds {
                         try await storeService.submitPaymentReport(
                             storeId: store.id,
-                            methodId: method,
-                            isSupported: isSupported
+                            methodId: id,
+                            isSupported: methods.contains(id)
                         )
                     }
                 }
-                
-                // Optimistically update local state for immediate UI feedback
-                await MainActor.run {
-                    if let index = self.stores.firstIndex(where: { $0.id == store.id }) {
-                        self.stores[index].supportedPaymentMethods = methods
-                        if self.selectedStore?.id == store.id {
-                            self.selectedStore = self.stores[index]
-                        }
-                    }
-                }
+                await MainActor.run { self.updateLocalStore(store.id, methods: methods) }
             } catch {
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
-                    // Still update local state even if Firebase fails (mock mode)
-                    if let index = self.stores.firstIndex(where: { $0.id == store.id }) {
-                        self.stores[index].supportedPaymentMethods = methods
-                        if self.selectedStore?.id == store.id {
-                            self.selectedStore = self.stores[index]
-                        }
-                    }
+                    self.updateLocalStore(store.id, methods: methods)
                 }
             }
+        }
+    }
+
+    private func updateLocalStore(_ storeId: String, methods: [String]) {
+        if let idx = stores.firstIndex(where: { $0.id == storeId }) {
+            stores[idx].supportedPaymentMethods = methods
+            if selectedStore?.id == storeId { selectedStore = stores[idx] }
         }
     }
 }

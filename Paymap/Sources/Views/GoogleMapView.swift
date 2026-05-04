@@ -43,6 +43,10 @@ struct GoogleMapView: UIViewRepresentable {
         options.frame = .zero
         let mapView = GMSMapView(options: options)
         mapView.delegate = context.coordinator
+        mapView.isMyLocationEnabled = true
+        mapView.settings.myLocationButton = true
+        // 広告バナー(50pt) + 余白 分だけ下部を押し上げてボタンが被らないようにする
+        mapView.padding = UIEdgeInsets(top: 0, left: 0, bottom: 66, right: 0)
         return mapView
     }
     

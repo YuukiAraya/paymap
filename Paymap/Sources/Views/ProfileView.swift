@@ -2,30 +2,26 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseCore
 
+// MARK: - Badge catalog
+private let badgeCatalog: [(id: String, icon: String, title: KeyPath<L10n, String>, color: Color)] = [
+    ("firstPost", "star.fill",   \.brFirstPost, .yellow),
+    ("br10",      "flame.fill",  \.br10,        .orange),
+    ("br50",      "bolt.fill",   \.br50,        .blue),
+    ("brMaster",  "crown.fill",  \.brMaster,    .purple),
+    ("brExplorer","map.fill",    \.brExplorer,  .green),
+]
+
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var lm: LanguageManager
     @State private var showingEditProfile = false
-    @State private var showingRegisteredStores = false
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-            List {
-                // Profile header
-                Section {
-                    HStack(spacing: 16) {
-                        Button(action: { showingEditProfile = true }) {
-                            ZStack(alignment: .bottomTrailing) {
-                                Image(systemName: "person.circle.fill")
-                                    .resizable().frame(width: 64, height: 64)
-                                    .foregroundColor(Color.premiumNavy)
-                                Image(systemName: "pencil.circle.fill")
-                                    .foregroundColor(Color.premiumEmerald)
-                                    .background(Color.white.clipShape(Circle()))
-                                    .offset(x: 4, y: 4)
-                            }
-                        }
+                List {
+                    // Profile header
+                    Section {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(authViewModel.userProfile?.displayName ?? lm.s.guestName)
                                 .font(.headline)
@@ -34,82 +30,90 @@ struct ProfileView: View {
                             Button(lm.s.editProfileLink) { showingEditProfile = true }
                                 .font(.caption).foregroundColor(Color.premiumEmerald)
                         }
-                    }
-                    .padding(.vertical, 8)
-                }
-
-                // Achievements
-                Section(header: Text(lm.s.achievementsSection)) {
-                    HStack {
-                        Text(lm.s.contributionPoints)
-                        Spacer()
-                        Text("\(authViewModel.userProfile?.totalContributions ?? 0) \(lm.s.pointsUnit)")
-                            .bold().foregroundColor(Color.premiumEmerald)
+                        .padding(.vertical, 8)
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(lm.s.badgesLabel).font(.subheadline)
-                        HStack(spacing: 16) {
-                            BadgeView(icon: "star.fill",  title: lm.s.brFirstPost, color: .yellow)
-                            BadgeView(icon: "flame.fill", title: lm.s.br10,        color: .orange)
-                            BadgeView(icon: "crown.fill", title: lm.s.brMaster,    color: .gray).opacity(0.4)
-                        }
-                    }
-                    .padding(.vertical, 8)
-
-                    NavigationLink(destination: ContributionRulesView()) {
-                        Label(lm.s.rulesLink, systemImage: "questionmark.circle")
-                            .foregroundColor(Color.premiumNavy)
-                    }
-                }
-
-                // My registered stores
-                Section(header: Text(lm.s.registeredStoresSection)) {
-                    NavigationLink(destination: MyRegisteredStoresView()) {
-                        Label(lm.s.viewRegisteredStores, systemImage: "mappin.and.ellipse")
-                            .foregroundColor(Color.premiumNavy)
-                    }
-                }
-
-                // Premium plan
-                Section(header: Text(lm.s.premiumSection)) {
-                    NavigationLink(destination: PremiumFeatureView()) {
+                    // Achievements
+                    Section(header: Text(lm.s.achievementsSection)) {
                         HStack {
-                            Image(systemName: "sparkles").foregroundColor(.purple)
-                            Text(lm.s.viewPremiumDetails)
-                                .foregroundColor(.purple).bold()
+                            Text(lm.s.contributionPoints)
+                            Spacer()
+                            Text("\(authViewModel.userProfile?.totalContributions ?? 0) \(lm.s.pointsUnit)")
+                                .bold().foregroundColor(Color.premiumEmerald)
+                        }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text(lm.s.badgesLabel).font(.subheadline)
+                            let earned = Set(authViewModel.userProfile?.badges ?? [])
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(badgeCatalog, id: \.id) { badge in
+                                        BadgeView(
+                                            icon: badge.icon,
+                                            title: lm.s[keyPath: badge.title],
+                                            color: badge.color
+                                        )
+                                        .opacity(earned.contains(badge.id) ? 1.0 : 0.25)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.vertical, 8)
+
+                        NavigationLink(destination: ContributionRulesView()) {
+                            Label(lm.s.rulesLink, systemImage: "questionmark.circle")
+                                .foregroundColor(Color.premiumNavy)
+                        }
+                    }
+
+                    // My registered stores
+                    Section(header: Text(lm.s.registeredStoresSection)) {
+                        NavigationLink(destination: MyRegisteredStoresView()) {
+                            Label(lm.s.viewRegisteredStores, systemImage: "mappin.and.ellipse")
+                                .foregroundColor(Color.premiumNavy)
+                        }
+                    }
+
+                    // Premium plan
+                    Section(header: Text(lm.s.premiumSection)) {
+                        NavigationLink(destination: PremiumFeatureView()) {
+                            HStack {
+                                Image(systemName: "sparkles").foregroundColor(.purple)
+                                Text(lm.s.viewPremiumDetails)
+                                    .foregroundColor(.purple).bold()
+                            }
+                        }
+                    }
+
+                    // Language
+                    Section(header: Text(lm.s.languageSection)) {
+                        Picker("", selection: Binding(
+                            get: { lm.language },
+                            set: { lm.language = $0 }
+                        )) {
+                            ForEach(AppLanguage.allCases, id: \.self) { lang in
+                                Text(lang.displayName).tag(lang)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    // Logout
+                    Section {
+                        Button(action: { authViewModel.signOut() }) {
+                            Text(lm.s.logoutButton).foregroundColor(.red)
                         }
                     }
                 }
-
-                // Language
-                Section(header: Text(lm.s.languageSection)) {
-                    Picker("", selection: Binding(
-                        get: { lm.language },
-                        set: { lm.language = $0 }
-                    )) {
-                        ForEach(AppLanguage.allCases, id: \.self) { lang in
-                            Text(lang.displayName).tag(lang)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                .navigationTitle(lm.s.myPageTitle)
+                .sheet(isPresented: $showingEditProfile) {
+                    EditProfileView()
+                        .environmentObject(authViewModel)
+                        .environmentObject(lm)
                 }
 
-                // Logout
-                Section {
-                    Button(action: { authViewModel.signOut() }) {
-                        Text(lm.s.logoutButton).foregroundColor(.red)
-                    }
-                }
+                AdBannerContainer()
             }
-            .navigationTitle(lm.s.myPageTitle)
-            .sheet(isPresented: $showingEditProfile) {
-                EditProfileView()
-                    .environmentObject(authViewModel)
-                    .environmentObject(lm)
-            }
-            AdBannerContainer(isPremium: authViewModel.userProfile.map { _ in false } ?? false)
-            } // VStack
         }
     }
 }
@@ -120,6 +124,7 @@ struct EditProfileView: View {
     @EnvironmentObject var lm: LanguageManager
     @Environment(\.dismiss) private var dismiss
     @State private var nickname = ""
+    @State private var email = ""
     @State private var isSaving = false
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -127,24 +132,15 @@ struct EditProfileView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text(lm.s.iconSection)) {
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Image(systemName: "person.circle.fill")
-                                .resizable().frame(width: 80, height: 80)
-                                .foregroundColor(Color.premiumNavy)
-                            Button(lm.s.changePhotoDisabled) {}
-                                .font(.caption).foregroundColor(.secondary)
-                                .disabled(true)
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
-
                 Section(header: Text(lm.s.nicknameSection)) {
                     TextField(lm.s.nicknamePlaceholder, text: $nickname)
+                }
+
+                Section(header: Text(lm.s.emailSection)) {
+                    TextField(lm.s.emailPlaceholder, text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                 }
             }
             .navigationTitle(lm.s.editProfileTitle)
@@ -159,7 +155,10 @@ struct EditProfileView: View {
                         .disabled(isSaving || nickname.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .onAppear { nickname = authViewModel.userProfile?.displayName ?? "" }
+            .onAppear {
+                nickname = authViewModel.userProfile?.displayName ?? ""
+                email    = authViewModel.userProfile?.email ?? ""
+            }
             .alert(lm.s.errorTitle, isPresented: $showingError) {
                 Button(lm.s.okButton) {}
             } message: { Text(errorMessage) }
@@ -170,7 +169,15 @@ struct EditProfileView: View {
         isSaving = true
         Task {
             do {
-                try await authViewModel.updateDisplayName(nickname.trimmingCharacters(in: .whitespaces))
+                let trimmedName  = nickname.trimmingCharacters(in: .whitespaces)
+                let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+
+                if trimmedName != authViewModel.userProfile?.displayName {
+                    try await authViewModel.updateDisplayName(trimmedName)
+                }
+                if trimmedEmail != authViewModel.userProfile?.email, !trimmedEmail.isEmpty {
+                    try await authViewModel.updateEmail(trimmedEmail)
+                }
                 dismiss()
             } catch {
                 errorMessage = error.localizedDescription
@@ -195,8 +202,7 @@ struct MyRegisteredStoresView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "mappin.slash")
                         .font(.system(size: 48)).foregroundColor(.secondary)
-                    Text(lm.s.myStoresEmpty)
-                        .foregroundColor(.secondary)
+                    Text(lm.s.myStoresEmpty).foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -251,17 +257,20 @@ class MyStoresViewModel: ObservableObject {
 struct BadgeView: View {
     let icon: String; let title: String; let color: Color
     var body: some View {
-        VStack {
+        VStack(spacing: 4) {
             Image(systemName: icon).resizable().scaledToFit()
                 .frame(height: 30).foregroundColor(color)
-            Text(title).font(.caption2)
+            Text(title).font(.caption2).multilineTextAlignment(.center)
         }
+        .frame(width: 60)
     }
 }
 
 // MARK: - Premium Feature View
 struct PremiumFeatureView: View {
     @EnvironmentObject var lm: LanguageManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
+    @State private var isPurchasing = false
 
     var body: some View {
         ScrollView {
@@ -269,6 +278,7 @@ struct PremiumFeatureView: View {
                 Image(systemName: "crown.fill").resizable()
                     .frame(width: 80, height: 80).foregroundColor(.yellow).padding(.top, 40)
                 Text(lm.s.premiumTitle).font(.largeTitle).bold()
+
                 VStack(alignment: .leading, spacing: 20) {
                     PremiumFeatureRow(icon: "eye.slash",
                                       title: lm.s.premiumNoAds,
@@ -284,12 +294,35 @@ struct PremiumFeatureView: View {
                                       description: lm.s.premiumCustomPinDesc)
                 }
                 .padding()
-                Button(action: { print("Upgrade tapped") }) {
-                    Text(lm.s.premiumUpgrade)
-                        .font(.headline).frame(maxWidth: .infinity).padding()
-                        .background(Color.yellow).foregroundColor(.black).cornerRadius(12)
+
+                if purchaseManager.isPremium {
+                    Label(lm.s.premiumActive, systemImage: "checkmark.seal.fill")
+                        .font(.headline).foregroundColor(Color.premiumEmerald).padding()
+                } else {
+                    Button(action: {
+                        Task {
+                            isPurchasing = true
+                            await purchaseManager.purchase()
+                            isPurchasing = false
+                        }
+                    }) {
+                        if isPurchasing || purchaseManager.isPurchasing {
+                            ProgressView(lm.s.premiumPurchasing)
+                                .frame(maxWidth: .infinity).padding()
+                        } else {
+                            Text(lm.s.premiumUpgrade)
+                                .font(.headline).frame(maxWidth: .infinity).padding()
+                                .background(Color.yellow).foregroundColor(.black).cornerRadius(12)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .disabled(isPurchasing || purchaseManager.isPurchasing)
+
+                    Button(lm.s.premiumRestorePurchases) {
+                        Task { await purchaseManager.restorePurchases() }
+                    }
+                    .font(.subheadline).foregroundColor(Color.premiumEmerald).padding(.bottom, 8)
                 }
-                .padding(.horizontal)
             }
         }
         .navigationTitle(lm.s.premiumSection)

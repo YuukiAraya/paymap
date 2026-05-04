@@ -1,7 +1,6 @@
 import SwiftUI
 import GoogleMobileAds
 
-// MARK: - Banner Ad View
 struct BannerAdView: UIViewRepresentable {
     let adUnitID: String
 
@@ -18,7 +17,6 @@ struct BannerAdView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: BannerView, context: Context) {}
-
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     class Coordinator: NSObject {
@@ -30,12 +28,12 @@ struct BannerAdView: UIViewRepresentable {
     }
 }
 
-// MARK: - Ad Banner Container（プレミアムユーザーは非表示）
+// isPremium は PurchaseManager から自動取得
 struct AdBannerContainer: View {
-    var isPremium: Bool = false
+    @EnvironmentObject var purchaseManager: PurchaseManager
 
     var body: some View {
-        if !isPremium {
+        if !purchaseManager.isPremium {
             BannerAdView()
                 .frame(height: 50)
                 .frame(maxWidth: .infinity)

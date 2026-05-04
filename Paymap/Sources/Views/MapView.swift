@@ -5,8 +5,9 @@ import CoreLocation
 struct MapView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var lm: LanguageManager
+    @EnvironmentObject var locationManager: LocationManager
     @StateObject private var viewModel = MapViewModel()
-    @State private var region = CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671)
+    @State private var region = LocationManager.defaultCoordinate
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -22,11 +23,23 @@ struct MapView: View {
                     StoreDetailSheet(store: selected, viewModel: viewModel)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                AdBannerContainer(isPremium: authViewModel.userProfile.map { _ in false } ?? false)
+                AdBannerContainer()
             }
             .zIndex(1)
         }
-        .onAppear { viewModel.fetchStores(in: region) }
+        .onAppear {
+            let coord = locationManager.currentOrDefault
+            region = coord
+            viewModel.fetchStores(in: coord)
+        }
+        .onChange(of: locationManager.location) { loc in
+            guard let loc else { return }
+            region = loc
+            viewModel.fetchStores(in: loc)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .storeRegistered)) { _ in
+            viewModel.fetchStores(in: locationManager.currentOrDefault)
+        }
     }
 }
 
@@ -159,75 +172,86 @@ struct StoreDetailFullView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    ZStack {
-                        Rectangle()
-                            .fill(store.category.color.opacity(0.15))
-                            .frame(height: 220)
-                        VStack(spacing: 8) {
-                            Image(systemName: store.category.iconName)
-                                .font(.system(size: 64))
-                                .foregroundColor(store.category.color.opacity(0.5))
-                            Text(lm.s.photoComingSoon)
-                                .font(.caption).foregroundColor(.secondary)
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 20) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(store.displayName(isEnglish: lm.isEnglish))
-                                .font(.title2).bold()
-                            Label(store.category.localizedName(lm.s), systemImage: store.category.iconName)
-                                .foregroundColor(store.category.color)
-                            if let address = store.displayAddress(isEnglish: lm.isEnglish) {
-                                Label(address, systemImage: "mappin.and.ellipse")
-                                    .font(.subheadline).foregroundColor(.secondary)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // 店舗写真（URLがあれば表示、なければプレースホルダー）
+                        ZStack {
+                            Rectangle()
+                                .fill(store.category.color.opacity(0.15))
+                                .frame(height: 220)
+                            if let urlStr = store.photoURL, let url = URL(string: urlStr) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let img):
+                                        img.resizable().scaledToFill()
+                                            .frame(height: 220).clipped()
+                                    case .failure:
+                                        photoPlaceholder
+                                    default:
+                                        ProgressView().frame(height: 220)
+                                    }
+                                }
+                            } else {
+                                photoPlaceholder
                             }
                         }
 
-                        Divider()
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(lm.s.paymentAvailable)
-                                .font(.headline).foregroundColor(Color.premiumNavy)
-                            if store.supportedPaymentMethods.isEmpty {
-                                Text(lm.s.noPaymentInfo)
-                                    .font(.subheadline).foregroundColor(.secondary)
-                            } else {
-                                let grouped = Dictionary(grouping: store.supportedPaymentMethods) { id in
-                                    PaymentCatalog.all.first { $0.id == id }?.group ?? .other
+                        VStack(alignment: .leading, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(store.displayName(isEnglish: lm.isEnglish))
+                                    .font(.title2).bold()
+                                Label(store.category.localizedName(lm.s), systemImage: store.category.iconName)
+                                    .foregroundColor(store.category.color)
+                                if let address = store.displayAddress(isEnglish: lm.isEnglish) {
+                                    Label(address, systemImage: "mappin.and.ellipse")
+                                        .font(.subheadline).foregroundColor(.secondary)
                                 }
-                                ForEach(PaymentCatalog.Entry.Group.allCases, id: \.self) { group in
-                                    if let ids = grouped[group], !ids.isEmpty {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(group.localizedName(lm.s))
-                                                .font(.caption).bold().foregroundColor(.secondary)
-                                            FlowLayout(ids: ids, l10n: lm.s)
+                            }
+
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(lm.s.paymentAvailable)
+                                    .font(.headline).foregroundColor(Color.premiumNavy)
+                                if store.supportedPaymentMethods.isEmpty {
+                                    Text(lm.s.noPaymentInfo)
+                                        .font(.subheadline).foregroundColor(.secondary)
+                                } else {
+                                    let grouped = Dictionary(grouping: store.supportedPaymentMethods) { id in
+                                        PaymentCatalog.all.first { $0.id == id }?.group ?? .other
+                                    }
+                                    ForEach(PaymentCatalog.Entry.Group.allCases, id: \.self) { group in
+                                        if let ids = grouped[group], !ids.isEmpty {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(group.localizedName(lm.s))
+                                                    .font(.caption).bold().foregroundColor(.secondary)
+                                                FlowLayout(ids: ids, l10n: lm.s)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        Divider()
+                            Divider()
 
-                        if let url = store.googleMapsURL {
-                            Link(destination: url) {
-                                Label(lm.s.openGoogleMaps, systemImage: "arrow.up.right.square")
+                            if let url = store.googleMapsURL {
+                                Link(destination: url) {
+                                    Label(lm.s.openGoogleMaps, systemImage: "arrow.up.right.square")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(SecondaryButtonStyle())
+                            }
+
+                            Button(action: { showingReport = true }) {
+                                Label(lm.s.addEditPayment, systemImage: "exclamationmark.bubble")
                                     .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(SecondaryButtonStyle())
+                            .buttonStyle(PrimaryButtonStyle())
                         }
-
-                        Button(action: { showingReport = true }) {
-                            Label(lm.s.addEditPayment, systemImage: "exclamationmark.bubble")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
+                        .padding()
                     }
-                    .padding()
                 }
+                AdBannerContainer()
             }
             .navigationTitle(lm.s.storeDetail)
             .navigationBarTitleDisplayMode(.inline)
@@ -239,8 +263,16 @@ struct StoreDetailFullView: View {
             .sheet(isPresented: $showingReport) {
                 ReportPaymentMethodView(store: store, viewModel: viewModel)
             }
-            AdBannerContainer(isPremium: authViewModel.userProfile.map { _ in false } ?? false)
-            } // VStack
+        }
+    }
+
+    private var photoPlaceholder: some View {
+        VStack(spacing: 8) {
+            Image(systemName: store.category.iconName)
+                .font(.system(size: 64))
+                .foregroundColor(store.category.color.opacity(0.5))
+            Text(lm.s.photoComingSoon)
+                .font(.caption).foregroundColor(.secondary)
         }
     }
 }
@@ -270,6 +302,7 @@ struct ReportPaymentMethodView: View {
     let store: Store
     @ObservedObject var viewModel: MapViewModel
     @EnvironmentObject var lm: LanguageManager
+    @EnvironmentObject var authViewModel: AuthViewModel
     @Environment(\.presentationMode) var presentationMode
 
     @State private var selectedIds: Set<String> = []
@@ -288,8 +321,7 @@ struct ReportPaymentMethodView: View {
                                 Button(action: { toggle(entry.id) }) {
                                     HStack {
                                         Image(systemName: entry.iconName)
-                                            .foregroundColor(Color.premiumNavy)
-                                            .frame(width: 24)
+                                            .foregroundColor(Color.premiumNavy).frame(width: 24)
                                         Text(PaymentCatalog.displayName(for: entry.id, l10n: lm.s))
                                             .foregroundColor(.primary)
                                         Spacer()
@@ -307,8 +339,7 @@ struct ReportPaymentMethodView: View {
 
                 Section {
                     Button(action: submitReport) {
-                        Text(lm.s.submitReport)
-                            .frame(maxWidth: .infinity)
+                        Text(lm.s.submitReport).frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .listRowInsets(EdgeInsets())
@@ -325,19 +356,19 @@ struct ReportPaymentMethodView: View {
             .onAppear { selectedIds = Set(store.supportedPaymentMethods) }
             .alert(lm.s.reportThanks, isPresented: $showingAlert) {
                 Button(lm.s.okButton) { presentationMode.wrappedValue.dismiss() }
-            } message: {
-                Text(lm.s.reportThanksBody)
-            }
+            } message: { Text(lm.s.reportThanksBody) }
         }
     }
 
     private func toggle(_ id: String) {
-        if selectedIds.contains(id) { selectedIds.remove(id) }
-        else { selectedIds.insert(id) }
+        if selectedIds.contains(id) { selectedIds.remove(id) } else { selectedIds.insert(id) }
     }
 
     private func submitReport() {
-        viewModel.submitConsensusReport(for: store, methods: Array(selectedIds))
+        viewModel.submitConsensusReport(for: store, methods: Array(selectedIds),
+                                        uid: authViewModel.userProfile?.uid)
+        // +10pt for report (+20pt if first report — simplified to +10 here)
+        Task { await authViewModel.addContributionPoints(10) }
         showingAlert = true
     }
 }

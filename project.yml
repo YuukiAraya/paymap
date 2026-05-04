@@ -24,6 +24,7 @@ targets:
       properties:
         CFBundleDisplayName: PayMap
         NSHumanReadableCopyright: "© PayMap"
+        GoogleMapsAPIKey: "AIzaSyC5nAa-MuY8Ef1uG0bSYhl5nKdlXMrkpqw"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon
