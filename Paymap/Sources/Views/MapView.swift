@@ -324,17 +324,25 @@ struct FacilityBadgesRow: View {
     let store: Store
     var body: some View {
         HStack(spacing: 4) {
-            if store.hasWifi == true {
-                Label("WiFi", systemImage: "wifi")
-                    .font(.caption2).foregroundColor(.blue)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.1)).cornerRadius(6)
+            if let wifi = store.hasWifi {
+                HStack(spacing: 3) {
+                    Image(systemName: wifi ? "wifi" : "wifi.slash")
+                    Text("WiFi")
+                }
+                .font(.caption2)
+                .foregroundColor(wifi ? .blue : .secondary)
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background((wifi ? Color.blue : Color.gray).opacity(0.1)).cornerRadius(6)
             }
-            if store.hasPower == true {
-                Label("電源", systemImage: "powerplug.fill")
-                    .font(.caption2).foregroundColor(.orange)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.orange.opacity(0.1)).cornerRadius(6)
+            if let power = store.hasPower {
+                HStack(spacing: 3) {
+                    Image(systemName: power ? "powerplug.fill" : "powerplug")
+                    Text("電源")
+                }
+                .font(.caption2)
+                .foregroundColor(power ? .orange : .secondary)
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background((power ? Color.orange : Color.gray).opacity(0.1)).cornerRadius(6)
             }
         }
     }
@@ -532,6 +540,29 @@ private struct FlowLayout: View {
     }
 }
 
+// MARK: - Facility three-state (あり / なし / 不明)
+private enum FacilityState: String, CaseIterable, Identifiable {
+    case available   = "あり"
+    case unavailable = "なし"
+    case unknown     = "不明"
+
+    var id: String { rawValue }
+    var boolValue: Bool? {
+        switch self {
+        case .available:   return true
+        case .unavailable: return false
+        case .unknown:     return nil
+        }
+    }
+    init(_ value: Bool?) {
+        switch value {
+        case true:  self = .available
+        case false: self = .unavailable
+        default:    self = .unknown
+        }
+    }
+}
+
 // MARK: - Report / Add Payment Methods
 struct ReportPaymentMethodView: View {
     let store: Store
@@ -541,11 +572,41 @@ struct ReportPaymentMethodView: View {
     @Environment(\.presentationMode) var presentationMode
 
     @State private var selectedIds: Set<String> = []
+    @State private var wifiState: FacilityState = .unknown
+    @State private var powerState: FacilityState = .unknown
     @State private var showingAlert = false
 
     var body: some View {
         NavigationView {
             Form {
+                // MARK: 設備情報
+                Section(header: Text(lm.s.facilitiesSection)) {
+                    HStack {
+                        Label(lm.s.hasWifiLabel, systemImage: "wifi")
+                            .foregroundColor(Color.premiumNavy)
+                        Spacer()
+                        Picker("", selection: $wifiState) {
+                            ForEach(FacilityState.allCases) { state in
+                                Text(state.rawValue).tag(state)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 160)
+                    }
+                    HStack {
+                        Label(lm.s.hasPowerLabel, systemImage: "powerplug.fill")
+                            .foregroundColor(Color.premiumNavy)
+                        Spacer()
+                        Picker("", selection: $powerState) {
+                            ForEach(FacilityState.allCases) { state in
+                                Text(state.rawValue).tag(state)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 160)
+                    }
+                }
+
                 Section(
                     header: Text(lm.s.reportSectionHeader),
                     footer: Text(lm.s.reportSectionFooter)
@@ -553,7 +614,7 @@ struct ReportPaymentMethodView: View {
                     ForEach(PaymentCatalog.grouped, id: \.group) { section in
                         Section(header: Text(section.group.localizedName(lm.s)).font(.caption).bold()) {
                             ForEach(section.entries) { entry in
-                                Button(action: { toggle(entry.id) }) {
+                                Button(action: { togglePayment(entry.id) }) {
                                     HStack {
                                         Image(systemName: entry.iconName)
                                             .foregroundColor(Color.premiumNavy).frame(width: 24)
@@ -587,20 +648,34 @@ struct ReportPaymentMethodView: View {
                     Button(lm.s.cancelButton) { presentationMode.wrappedValue.dismiss() }
                 }
             }
-            .onAppear { selectedIds = Set(store.supportedPaymentMethods) }
+            .onAppear {
+                selectedIds = Set(store.supportedPaymentMethods)
+                wifiState  = FacilityState(store.hasWifi)
+                powerState = FacilityState(store.hasPower)
+            }
             .alert(lm.s.reportThanks, isPresented: $showingAlert) {
                 Button(lm.s.okButton) { presentationMode.wrappedValue.dismiss() }
             } message: { Text(lm.s.reportThanksBody) }
         }
     }
 
-    private func toggle(_ id: String) {
-        if selectedIds.contains(id) { selectedIds.remove(id) } else { selectedIds.insert(id) }
+    private func togglePayment(_ id: String) {
+        if selectedIds.contains(id) {
+            selectedIds.remove(id)
+        } else if id == "cash_only" {
+            selectedIds = ["cash_only"]
+        } else {
+            selectedIds.remove("cash_only")
+            selectedIds.insert(id)
+        }
     }
 
     private func submitReport() {
         viewModel.submitConsensusReport(for: store, methods: Array(selectedIds),
                                         uid: authViewModel.userProfile?.uid)
+        viewModel.updateStoreFacilities(storeId: store.id,
+                                        hasWifi: wifiState.boolValue,
+                                        hasPower: powerState.boolValue)
         Task { await authViewModel.addContributionPoints(10) }
         showingAlert = true
     }

@@ -28,12 +28,12 @@ iOSアプリ (PayMap)
 
 | 項目 | 設定値 |
 |------|--------|
-| データベース名 | `アカウント名_paymap`（例: `yourname_paymap`） |
-| データベースパスワード | 任意のパスワード（メモしておく） |
+| データベース名 | coussinet_paymap|
+| データベースパスワード | いつもの|
 | 文字コード | UTF-8 |
 
 5. 作成後、接続情報を確認：
-   - **接続先サーバー（ホスト名）**: `mysqlXXX.db.sakura.ne.jp` ← コントロールパネルで確認
+   - **接続先サーバー（ホスト名）**: `mysql3115.db.sakura.ne.jp` ← コントロールパネルで確認
 
 ---
 
@@ -52,9 +52,9 @@ iOSアプリ (PayMap)
 
 | 項目 | 値 |
 |------|-----|
-| FTPサーバー | `ftpXXX.sakura.ne.jp` |
-| ユーザー名 | さくらアカウント名 |
-| パスワード | さくらのパスワード |
+| FTPサーバー | `coussinet.sakura.ne.jp` |
+| ユーザー名 | coussinet |
+| パスワード | midori0812 |
 
 ### アップロード先
 
@@ -106,7 +106,7 @@ FTPで `public_html/paymap/uploads/` フォルダを作成し、パーミッシ�
 ブラウザで以下のURLにアクセスして動作確認：
 
 ```
-https://yourserver.sakura.ne.jp/paymap/api/stores.php?lat=35.69&lng=139.70&radius=5
+https://coussinet.sakura.ne.jp/paymap/api/stores.php?lat=35.69&lng=139.70&radius=5
 ```
 
 以下のようなJSONが返れば成功です：
@@ -134,7 +134,7 @@ https://yourserver.sakura.ne.jp/paymap/api/stores.php?lat=35.69&lng=139.70&radiu
    let photoUrl = try await storeService.uploadStorePhoto(
        storeId: store.id,
        imageData: imageData,
-       uploadBaseURL: "https://yourserver.sakura.ne.jp/paymap/api"
+       uploadBaseURL: "https://coussinet.sakura.ne.jp/paymap/api"
    )
    ```
 

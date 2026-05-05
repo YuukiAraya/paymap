@@ -86,6 +86,16 @@ class StoreService {
         }
     }
 
+    // MARK: - Update store facilities (WiFi / Power)
+    func updateStoreFacilities(storeId: String, hasWifi: Bool?, hasPower: Bool?) async throws {
+        guard FirebaseApp.app() != nil else { return }
+        var data: [String: Any] = [:]
+        if let wifi  = hasWifi  { data["hasWifi"]  = wifi  }
+        if let power = hasPower { data["hasPower"] = power }
+        guard !data.isEmpty else { return }
+        try await db.collection("stores").document(storeId).updateData(data)
+    }
+
     // MARK: - Fetch stores by user
     func fetchStoresByUser(uid: String) async throws -> [Store] {
         guard FirebaseApp.app() != nil else { return [] }

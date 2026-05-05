@@ -74,6 +74,11 @@ private extension Store {
               let lng = result.geometry?.location.lng
         else { return nil }
 
+        let apiKey = Bundle.main.object(forInfoDictionaryKey: "GoogleMapsAPIKey") as? String ?? ""
+        let photoURL: String? = result.photos?.first.map { photo in
+            "https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=\(photo.photoReference)&key=\(apiKey)"
+        }
+
         self.init(
             id: result.placeId,
             name: result.name,
@@ -83,7 +88,7 @@ private extension Store {
             supportedPaymentMethods: [],
             address: result.vicinity,
             addressEn: nil,
-            photoURL: nil,
+            photoURL: photoURL,
             registeredByUid: nil
         )
     }
@@ -94,7 +99,8 @@ private extension StoreCategory {
         let t = Set(googleTypes)
         if t.contains("convenience_store")                          { self = .convenienceStore }
         else if t.contains("cafe")                                  { self = .cafe }
-        else if t.contains("bar") || t.contains("night_club")       { self = .izakaya }
+        else if t.contains("bar")                                   { self = .bar }
+        else if t.contains("night_club")                            { self = .izakaya }
         else if t.contains("meal_takeaway") || t.contains("meal_delivery") { self = .fastFood }
         else if t.contains("supermarket") || t.contains("grocery_or_supermarket") { self = .supermarket }
         else if t.contains("pharmacy") || t.contains("drugstore")   { self = .drugStore }

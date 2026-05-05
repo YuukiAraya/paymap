@@ -10,9 +10,10 @@ struct StoreFilter {
     var category: StoreCategory? = nil
     var requireWifi: Bool = false
     var requirePower: Bool = false
+    var showFavoritesOnly: Bool = false
 
     var isActive: Bool {
-        !paymentIds.isEmpty || category != nil || requireWifi || requirePower
+        !paymentIds.isEmpty || category != nil || requireWifi || requirePower || showFavoritesOnly
     }
 
     mutating func clear() {
@@ -20,6 +21,7 @@ struct StoreFilter {
         category = nil
         requireWifi = false
         requirePower = false
+        showFavoritesOnly = false
     }
 }
 
@@ -43,6 +45,7 @@ class MapViewModel: ObservableObject {
     var filteredStores: [Store] {
         guard activeFilter.isActive else { return stores }
         return stores.filter { store in
+            if activeFilter.showFavoritesOnly, !store.isFavorited { return false }
             if let cat = activeFilter.category, store.category != cat { return false }
             if activeFilter.requireWifi, store.hasWifi != true { return false }
             if activeFilter.requirePower, store.hasPower != true { return false }
@@ -151,6 +154,22 @@ class MapViewModel: ObservableObject {
                     self.updateFavoriteFlag(storeId: store.id, isFav: !newState)
                 }
             }
+        }
+    }
+
+    // MARK: - Update WiFi / Power info
+    func updateStoreFacilities(storeId: String, hasWifi: Bool?, hasPower: Bool?) {
+        Task {
+            do {
+                try await storeService.updateStoreFacilities(storeId: storeId, hasWifi: hasWifi, hasPower: hasPower)
+                await MainActor.run {
+                    if let idx = stores.firstIndex(where: { $0.id == storeId }) {
+                        if let wifi  = hasWifi  { stores[idx].hasWifi  = wifi  }
+                        if let power = hasPower { stores[idx].hasPower = power }
+                        if selectedStore?.id == storeId { selectedStore = stores[idx] }
+                    }
+                }
+            } catch {}
         }
     }
 

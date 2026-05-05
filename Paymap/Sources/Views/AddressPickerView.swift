@@ -8,6 +8,7 @@ struct AddressPickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     let initialAddress: String
+    var initialCoordinate: CLLocationCoordinate2D? = nil
     var onConfirm: (CLLocationCoordinate2D, String) -> Void
 
     @State private var confirmedCoordinate: CLLocationCoordinate2D?
@@ -88,7 +89,20 @@ struct AddressPickerView: View {
     }
 
     private func geocodeInitialAddress() {
+        if let coord = initialCoordinate {
+            mapCenter = coord
+            confirmedCoordinate = coord
+            if !initialAddress.isEmpty {
+                // 確認済み座標＋住所あり → そのまま使う
+                displayAddress = initialAddress
+            } else {
+                // 座標はあるが住所未入力（現在地から開いた場合など）→ 逆ジオコーディングで住所を取得
+                reverseGeocodeCenter(coord)
+            }
+            return
+        }
         guard !initialAddress.isEmpty else { return }
+        // 住所文字列をジオコーディングしてマップ中心を移動
         isGeocoding = true
         geocodeError = nil
         Task {

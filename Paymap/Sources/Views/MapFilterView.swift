@@ -11,6 +11,14 @@ struct MapFilterView: View {
     var body: some View {
         NavigationView {
             Form {
+                // MARK: お気に入りフィルター
+                Section {
+                    Toggle(isOn: $draftFilter.showFavoritesOnly) {
+                        Label(lm.s.filterFavoritesOnly, systemImage: "heart.fill")
+                    }
+                    .tint(.red)
+                }
+
                 // MARK: カテゴリフィルター
                 Section(header: Text(lm.s.filterByCategory)) {
                     Button(action: { draftFilter.category = nil }) {

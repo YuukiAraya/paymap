@@ -119,6 +119,7 @@ struct L10n {
     let catCafe: String
     let catRestaurant: String
     let catIzakaya: String
+    let catBar: String
     let catFastFood: String
     let catSupermarket: String
     let catDrugStore: String
@@ -141,6 +142,7 @@ struct L10n {
 
     // MARK: - Payment Methods (only non-brand names need translation)
     let paymentCashOnly: String
+    let paymentCashAlso: String
 
     // MARK: - Email Change
     let emailSection: String
@@ -176,6 +178,7 @@ struct L10n {
     let filterNoResults: String
     let filterAllCategories: String
     let advancedFilterPremium: String
+    let filterFavoritesOnly: String
 
     // MARK: - Long Press Register
     let longPressHint: String
@@ -313,6 +316,7 @@ extension L10n {
         catCafe: "カフェ",
         catRestaurant: "レストラン",
         catIzakaya: "居酒屋",
+        catBar: "バー",
         catFastFood: "ファストフード",
         catSupermarket: "スーパー",
         catDrugStore: "ドラッグストア",
@@ -327,6 +331,7 @@ extension L10n {
         errorNotAuthenticated: "ログインが必要です",
         errorDatabasePrefix: "データベースエラー: ",
         paymentCashOnly: "現金のみ",
+        paymentCashAlso: "現金も可能",
         emailSection: "メールアドレス",
         emailPlaceholder: "新しいメールアドレス",
         emailChangeSuccess: "メールアドレスを変更しました",
@@ -352,6 +357,7 @@ extension L10n {
         filterNoResults: "条件に合う店舗がありません",
         filterAllCategories: "すべてのカテゴリ",
         advancedFilterPremium: "高度な絞り込みはプレミアム会員限定です",
+        filterFavoritesOnly: "お気に入りのみ表示",
         longPressHint: "長押しで店舗を登録できます",
         registerHereTitle: "この場所に店舗を登録",
         registerHereButton: "ここに登録する",
@@ -477,7 +483,8 @@ extension L10n {
         catConvenience: "Convenience Store",
         catCafe: "Café",
         catRestaurant: "Restaurant",
-        catIzakaya: "Izakaya (Bar)",
+        catIzakaya: "Izakaya",
+        catBar: "Bar",
         catFastFood: "Fast Food",
         catSupermarket: "Supermarket",
         catDrugStore: "Drug Store",
@@ -492,6 +499,7 @@ extension L10n {
         errorNotAuthenticated: "Please sign in to continue.",
         errorDatabasePrefix: "Database error: ",
         paymentCashOnly: "Cash only",
+        paymentCashAlso: "Cash also accepted",
         emailSection: "Email Address",
         emailPlaceholder: "New email address",
         emailChangeSuccess: "Email address updated",
@@ -517,6 +525,7 @@ extension L10n {
         filterNoResults: "No stores match your filters",
         filterAllCategories: "All Categories",
         advancedFilterPremium: "Advanced filters require Premium",
+        filterFavoritesOnly: "Favorites Only",
         longPressHint: "Long-press on the map to register a store",
         registerHereTitle: "Register Store Here",
         registerHereButton: "Register Here",

@@ -62,6 +62,7 @@ enum PaymentCatalog {
         Entry(id: "coke_on",     displayName: "Coke ON Pay",      group: .ic, iconName: "wave.3.right"),
         // その他
         Entry(id: "cash_only",   displayName: "Cash only",          group: .other, iconName: "yensign.circle"),
+        Entry(id: "cash_also",   displayName: "Cash also accepted", group: .other, iconName: "yensign.circle.fill"),
     ]
 
     static func displayName(for id: String) -> String {
@@ -70,6 +71,7 @@ enum PaymentCatalog {
 
     static func displayName(for id: String, l10n: L10n) -> String {
         if id == "cash_only" { return l10n.paymentCashOnly }
+        if id == "cash_also" { return l10n.paymentCashAlso }
         return all.first { $0.id == id }?.displayName ?? id
     }
 

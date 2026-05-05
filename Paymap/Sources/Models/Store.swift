@@ -46,6 +46,7 @@ enum StoreCategory: String, Codable, CaseIterable {
     case cafe             = "カフェ"
     case restaurant       = "レストラン"
     case izakaya          = "居酒屋"
+    case bar              = "バー"
     case fastFood         = "ファストフード"
     case supermarket      = "スーパー"
     case drugStore        = "ドラッグストア"
@@ -61,6 +62,7 @@ enum StoreCategory: String, Codable, CaseIterable {
         case .cafe:             return l10n.catCafe
         case .restaurant:       return l10n.catRestaurant
         case .izakaya:          return l10n.catIzakaya
+        case .bar:              return l10n.catBar
         case .fastFood:         return l10n.catFastFood
         case .supermarket:      return l10n.catSupermarket
         case .drugStore:        return l10n.catDrugStore
@@ -76,6 +78,7 @@ enum StoreCategory: String, Codable, CaseIterable {
         case .cafe:             return "cup.and.saucer.fill"
         case .restaurant:       return "fork.knife"
         case .izakaya:          return "wineglass.fill"
+        case .bar:              return "wineglass"
         case .fastFood:         return "bag.fill"
         case .supermarket:      return "basket.fill"
         case .drugStore:        return "cross.case.fill"
@@ -91,6 +94,7 @@ enum StoreCategory: String, Codable, CaseIterable {
         case .cafe:             return .brown
         case .restaurant:       return .red
         case .izakaya:          return .purple
+        case .bar:              return Color(red: 0.55, green: 0.0, blue: 0.55)
         case .fastFood:         return Color(red: 0.85, green: 0.65, blue: 0.0)
         case .supermarket:      return .green
         case .drugStore:        return .pink

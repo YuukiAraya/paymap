@@ -58,7 +58,11 @@ struct StoreRegisterView: View {
                         }
                     }
                     .sheet(isPresented: $showingAddressPicker) {
-                        AddressPickerView(initialAddress: viewModel.address) { coord, resolvedAddress in
+                        AddressPickerView(
+                            initialAddress: viewModel.address,
+                            initialCoordinate: viewModel.confirmedCoordinate
+                                ?? (viewModel.address.isEmpty ? locationManager.currentOrDefault : nil)
+                        ) { coord, resolvedAddress in
                             viewModel.confirmedCoordinate = coord
                             viewModel.isLocationConfirmed = true
                             if resolvedAddress.isEmpty == false {
@@ -219,8 +223,14 @@ class StoreRegisterViewModel: ObservableObject {
     }
 
     func toggle(_ id: String) {
-        if selectedPayments.contains(id) { selectedPayments.remove(id) }
-        else { selectedPayments.insert(id) }
+        if selectedPayments.contains(id) {
+            selectedPayments.remove(id)
+        } else if id == "cash_only" {
+            selectedPayments = ["cash_only"]
+        } else {
+            selectedPayments.remove("cash_only")
+            selectedPayments.insert(id)
+        }
     }
 
     func submit(registeredByUid: String?, fallbackCoordinate: CLLocationCoordinate2D) async -> Bool {

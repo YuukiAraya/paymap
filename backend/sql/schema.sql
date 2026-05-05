@@ -2,8 +2,8 @@
 -- MySQL 5.7 / 8.0 対応
 -- さくらインターネット共有サーバー / VPS で使用
 
-CREATE DATABASE IF NOT EXISTS paymap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE paymap;
+CREATE DATABASE IF NOT EXISTS coussinet_paymap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE coussinet_paymap;
 
 -- ============================================================
 -- 店舗テーブル
