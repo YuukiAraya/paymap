@@ -13,6 +13,9 @@ struct Store: Identifiable, Codable {
     var addressEn: String?
     var photoURL: String?
     var registeredByUid: String?
+    var hasWifi: Bool?
+    var hasPower: Bool?
+    var isFavorited: Bool = false
 
     struct Coordinate: Codable {
         let latitude: Double

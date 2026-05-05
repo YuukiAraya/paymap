@@ -6,6 +6,19 @@ struct GeocodingService {
         Bundle.main.object(forInfoDictionaryKey: "GoogleMapsAPIKey") as? String ?? ""
     }
 
+    // 座標 → 住所（逆ジオコーディング）
+    func reverseGeocode(_ coordinate: CLLocationCoordinate2D, language: String = "ja") async -> String? {
+        let lat = coordinate.latitude
+        let lng = coordinate.longitude
+        guard let url = URL(string: "https://maps.googleapis.com/maps/api/geocode/json?latlng=\(lat),\(lng)&key=\(apiKey)&language=\(language)")
+        else { return nil }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(GeocodingResponse.self, from: data)
+            return response.results.first?.formattedAddress
+        } catch { return nil }
+    }
+
     // 住所 → 英語表記に翻訳
     func translateAddressToEnglish(_ japaneseAddress: String) async -> String? {
         return await geocode(japaneseAddress, language: "en").flatMap { $0.formattedAddress }

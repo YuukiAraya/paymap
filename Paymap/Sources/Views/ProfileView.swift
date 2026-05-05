@@ -72,6 +72,18 @@ struct ProfileView: View {
                             Label(lm.s.viewRegisteredStores, systemImage: "mappin.and.ellipse")
                                 .foregroundColor(Color.premiumNavy)
                         }
+                        NavigationLink(destination: FavoritesView()) {
+                            Label(lm.s.favoritesTitle, systemImage: "heart.fill")
+                                .foregroundColor(.pink)
+                        }
+                    }
+
+                    // Ranking
+                    Section(header: Text(lm.s.rankingSection)) {
+                        NavigationLink(destination: RankingView()) {
+                            Label(lm.s.rankingTitle, systemImage: "chart.bar.fill")
+                                .foregroundColor(Color.premiumNavy)
+                        }
                     }
 
                     // Premium plan

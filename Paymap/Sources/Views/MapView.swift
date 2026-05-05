@@ -6,31 +6,112 @@ struct MapView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var lm: LanguageManager
     @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
     @StateObject private var viewModel = MapViewModel()
     @State private var region = LocationManager.defaultCoordinate
+    @State private var longPressCoordinate: CLLocationCoordinate2D? = nil
+    @State private var showingFilter = false
+    @State private var showingRegisterFromLongPress = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
             GoogleMapView(
-                stores: $viewModel.stores,
+                stores: Binding(
+                    get: { viewModel.filteredStores },
+                    set: { _ in }
+                ),
                 selectedStore: $viewModel.selectedStore,
-                region: $region
+                region: $region,
+                longPressCoordinate: $longPressCoordinate
             )
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if let selected = viewModel.selectedStore {
+                // オフライン表示バナー
+                if viewModel.isOffline {
+                    HStack {
+                        Image(systemName: "wifi.slash")
+                        Text(lm.s.showingCachedData)
+                            .font(.caption)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.orange.opacity(0.85))
+                    .foregroundColor(.white)
+                }
+
+                // フィルター適用中バナー
+                if viewModel.activeFilter.isActive {
+                    Button(action: { showingFilter = true }) {
+                        HStack {
+                            Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                            Text(lm.s.filterActive)
+                                .font(.caption).bold()
+                            Spacer()
+                            Text(lm.s.clearFilters)
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.premiumEmerald.opacity(0.9))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                    }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        viewModel.activeFilter.clear()
+                    })
+                }
+
+                Spacer()
+
+                // 長押し登録ポップアップ
+                if let coord = longPressCoordinate {
+                    LongPressRegisterCard(
+                        coordinate: coord,
+                        onRegister: { showingRegisterFromLongPress = true },
+                        onCancel: { longPressCoordinate = nil }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+
+                // 店舗詳細シート
+                if let selected = viewModel.selectedStore, longPressCoordinate == nil {
                     StoreDetailSheet(store: selected, viewModel: viewModel)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+
                 AdBannerContainer()
             }
             .zIndex(1)
+
+            // フィルターボタン（右上）
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: { showingFilter = true }) {
+                        ZStack {
+                            Circle()
+                                .fill(viewModel.activeFilter.isActive ? Color.premiumEmerald : Color.white)
+                                .frame(width: 44, height: 44)
+                                .shadow(radius: 4)
+                            Image(systemName: "slider.horizontal.3")
+                                .foregroundColor(viewModel.activeFilter.isActive ? .white : Color.premiumNavy)
+                        }
+                    }
+                    .padding(.top, 60)
+                    .padding(.trailing, 16)
+                }
+                Spacer()
+            }
+            .zIndex(2)
         }
         .onAppear {
             let coord = locationManager.currentOrDefault
             region = coord
             viewModel.fetchStores(in: coord)
+            if let uid = authViewModel.userProfile?.uid {
+                viewModel.loadFavorites(uid: uid)
+            }
         }
         .onChange(of: locationManager.location) { loc in
             guard let loc else { return }
@@ -38,8 +119,67 @@ struct MapView: View {
             viewModel.fetchStores(in: loc)
         }
         .onReceive(NotificationCenter.default.publisher(for: .storeRegistered)) { _ in
+            longPressCoordinate = nil
             viewModel.fetchStores(in: locationManager.currentOrDefault)
         }
+        .sheet(isPresented: $showingFilter) {
+            MapFilterView(filter: $viewModel.activeFilter)
+                .environmentObject(lm)
+                .environmentObject(purchaseManager)
+        }
+        .sheet(isPresented: $showingRegisterFromLongPress) {
+            StoreRegisterView(initialCoordinate: longPressCoordinate)
+                .environmentObject(authViewModel)
+                .environmentObject(lm)
+                .environmentObject(locationManager)
+        }
+        .onChange(of: showingRegisterFromLongPress) { showing in
+            if !showing { longPressCoordinate = nil }
+        }
+    }
+}
+
+// MARK: - Long Press Register Card
+private struct LongPressRegisterCard: View {
+    let coordinate: CLLocationCoordinate2D
+    let onRegister: () -> Void
+    let onCancel: () -> Void
+    @EnvironmentObject var lm: LanguageManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "mappin.circle.fill")
+                    .foregroundColor(Color.premiumEmerald)
+                    .font(.title2)
+                Text(lm.s.registerHereTitle)
+                    .font(.headline).foregroundColor(Color.premiumNavy)
+                Spacer()
+                Button(action: onCancel) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray).imageScale(.large)
+                }
+            }
+            Text(String(format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude))
+                .font(.caption).foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                Button(action: onCancel) {
+                    Text(lm.s.cancelPinButton).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+
+                Button(action: onRegister) {
+                    Label(lm.s.registerHereButton, systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .glassCard()
+        .padding(.horizontal).padding(.bottom, 8)
     }
 }
 
@@ -59,6 +199,12 @@ struct StorePinView: View {
                 Image(systemName: store.category.iconName)
                     .foregroundColor(.white)
                     .font(isSelected ? .title3 : .body)
+                if store.isFavorited {
+                    Circle()
+                        .fill(Color.yellow)
+                        .frame(width: 12, height: 12)
+                        .offset(x: isSelected ? 16 : 12, y: isSelected ? -16 : -12)
+                }
             }
             if isSelected {
                 Text(displayName ?? store.name)
@@ -78,6 +224,7 @@ struct StoreDetailSheet: View {
     let store: Store
     @ObservedObject var viewModel: MapViewModel
     @EnvironmentObject var lm: LanguageManager
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showingDetail = false
     @State private var showingReport = false
 
@@ -102,11 +249,23 @@ struct StoreDetailSheet: View {
                         Label(address, systemImage: "mappin.and.ellipse")
                             .font(.caption).foregroundColor(.secondary)
                     }
+                    FacilityBadgesRow(store: store)
                 }
                 Spacer()
-                Button(action: { withAnimation { viewModel.selectedStore = nil } }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray).imageScale(.large)
+                VStack(spacing: 8) {
+                    Button(action: {
+                        if let uid = authViewModel.userProfile?.uid {
+                            withAnimation { viewModel.toggleFavorite(store: store, uid: uid) }
+                        }
+                    }) {
+                        Image(systemName: store.isFavorited ? "heart.fill" : "heart")
+                            .foregroundColor(store.isFavorited ? .red : .gray)
+                            .imageScale(.large)
+                    }
+                    Button(action: { withAnimation { viewModel.selectedStore = nil } }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray).imageScale(.large)
+                    }
                 }
             }
 
@@ -160,6 +319,27 @@ struct StoreDetailSheet: View {
     }
 }
 
+// MARK: - Facility Badges Row
+struct FacilityBadgesRow: View {
+    let store: Store
+    var body: some View {
+        HStack(spacing: 4) {
+            if store.hasWifi == true {
+                Label("WiFi", systemImage: "wifi")
+                    .font(.caption2).foregroundColor(.blue)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.1)).cornerRadius(6)
+            }
+            if store.hasPower == true {
+                Label("電源", systemImage: "powerplug.fill")
+                    .font(.caption2).foregroundColor(.orange)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.orange.opacity(0.1)).cornerRadius(6)
+            }
+        }
+    }
+}
+
 // MARK: - Full Detail Page
 struct StoreDetailFullView: View {
     let store: Store
@@ -174,7 +354,6 @@ struct StoreDetailFullView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        // 店舗写真（URLがあれば表示、なければプレースホルダー）
                         ZStack {
                             Rectangle()
                                 .fill(store.category.color.opacity(0.15))
@@ -185,10 +364,8 @@ struct StoreDetailFullView: View {
                                     case .success(let img):
                                         img.resizable().scaledToFill()
                                             .frame(height: 220).clipped()
-                                    case .failure:
-                                        photoPlaceholder
-                                    default:
-                                        ProgressView().frame(height: 220)
+                                    case .failure: photoPlaceholder
+                                    default: ProgressView().frame(height: 220)
                                     }
                                 }
                             } else {
@@ -205,6 +382,31 @@ struct StoreDetailFullView: View {
                                 if let address = store.displayAddress(isEnglish: lm.isEnglish) {
                                     Label(address, systemImage: "mappin.and.ellipse")
                                         .font(.subheadline).foregroundColor(.secondary)
+                                }
+                            }
+
+                            // 設備情報
+                            if store.hasWifi != nil || store.hasPower != nil {
+                                Divider()
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(lm.s.facilitiesSection)
+                                        .font(.headline).foregroundColor(Color.premiumNavy)
+                                    HStack(spacing: 12) {
+                                        if let wifi = store.hasWifi {
+                                            FacilityChip(
+                                                icon: "wifi",
+                                                label: wifi ? lm.s.wifiAvailable : lm.s.wifiUnavailable,
+                                                available: wifi
+                                            )
+                                        }
+                                        if let power = store.hasPower {
+                                            FacilityChip(
+                                                icon: "powerplug.fill",
+                                                label: power ? lm.s.powerAvailable : lm.s.powerUnavailable,
+                                                available: power
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
@@ -234,12 +436,27 @@ struct StoreDetailFullView: View {
 
                             Divider()
 
-                            if let url = store.googleMapsURL {
-                                Link(destination: url) {
-                                    Label(lm.s.openGoogleMaps, systemImage: "arrow.up.right.square")
-                                        .frame(maxWidth: .infinity)
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    if let uid = authViewModel.userProfile?.uid {
+                                        viewModel.toggleFavorite(store: store, uid: uid)
+                                    }
+                                }) {
+                                    Label(
+                                        store.isFavorited ? lm.s.removeFavorite : lm.s.addFavorite,
+                                        systemImage: store.isFavorited ? "heart.fill" : "heart"
+                                    ).frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(SecondaryButtonStyle())
+                                .foregroundColor(store.isFavorited ? .red : .primary)
+
+                                if let url = store.googleMapsURL {
+                                    Link(destination: url) {
+                                        Label(lm.s.openGoogleMaps, systemImage: "arrow.up.right.square")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(SecondaryButtonStyle())
+                                }
                             }
 
                             Button(action: { showingReport = true }) {
@@ -274,6 +491,24 @@ struct StoreDetailFullView: View {
             Text(lm.s.photoComingSoon)
                 .font(.caption).foregroundColor(.secondary)
         }
+    }
+}
+
+// MARK: - Facility Chip
+struct FacilityChip: View {
+    let icon: String
+    let label: String
+    let available: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(label).font(.caption).bold()
+        }
+        .foregroundColor(available ? .green : .secondary)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background((available ? Color.green : Color.gray).opacity(0.12))
+        .cornerRadius(10)
     }
 }
 
@@ -336,7 +571,6 @@ struct ReportPaymentMethodView: View {
                         }
                     }
                 }
-
                 Section {
                     Button(action: submitReport) {
                         Text(lm.s.submitReport).frame(maxWidth: .infinity)
@@ -367,7 +601,6 @@ struct ReportPaymentMethodView: View {
     private func submitReport() {
         viewModel.submitConsensusReport(for: store, methods: Array(selectedIds),
                                         uid: authViewModel.userProfile?.uid)
-        // +10pt for report (+20pt if first report — simplified to +10 here)
         Task { await authViewModel.addContributionPoints(10) }
         showingAlert = true
     }

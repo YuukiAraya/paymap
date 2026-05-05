@@ -108,13 +108,15 @@ class StoreService {
                 totalContributions: data["totalContributions"] as? Int ?? 0,
                 badges: data["badges"] as? [String] ?? [],
                 isPremium: data["isPremium"] as? Bool ?? false,
-                photoURL: data["photoURL"] as? String
+                photoURL: data["photoURL"] as? String,
+                favoriteStoreIds: data["favoriteStoreIds"] as? [String] ?? []
             )
         } else {
             let newData: [String: Any] = [
                 "displayName": displayName, "email": email,
                 "totalContributions": 0, "badges": [],
-                "isPremium": false, "createdAt": Date()
+                "isPremium": false, "createdAt": Date(),
+                "favoriteStoreIds": []
             ]
             try await ref.setData(newData)
             return UserData(totalContributions: 0, badges: [], isPremium: false, photoURL: nil)
@@ -165,7 +167,7 @@ class StoreService {
                   supportedPaymentMethods: ["paypay","suica","pasmo","nanaco","waon",
                                             "visa","mastercard","jcb","quicpay","id_payment"],
                   address: "東京都新宿区新宿3丁目", addressEn: "3 Chome Shinjuku, Shinjuku-ku, Tokyo",
-                  photoURL: nil, registeredByUid: nil),
+                  photoURL: nil, registeredByUid: nil, hasWifi: false, hasPower: false),
 
             Store(id: "seed_shinjuku_02",
                   name: "ローソン 新宿三丁目店", nameEn: "Lawson Shinjuku 3-chome",
@@ -193,7 +195,7 @@ class StoreService {
                   supportedPaymentMethods: ["visa","mastercard","jcb","amex",
                                             "suica","pasmo","paypay"],
                   address: "東京都渋谷区代々木2-2-1", addressEn: "2-2-1 Yoyogi, Shibuya-ku, Tokyo",
-                  photoURL: nil, registeredByUid: nil),
+                  photoURL: nil, registeredByUid: nil, hasWifi: true, hasPower: true),
 
             Store(id: "seed_shinjuku_05",
                   name: "ドトールコーヒー 新宿西口店", nameEn: "Doutor Coffee Shinjuku West",
@@ -201,7 +203,7 @@ class StoreService {
                   category: .cafe,
                   supportedPaymentMethods: ["paypay","visa","mastercard","suica","pasmo"],
                   address: "東京都新宿区西新宿1-1", addressEn: "1-1 Nishi-Shinjuku, Shinjuku-ku, Tokyo",
-                  photoURL: nil, registeredByUid: nil),
+                  photoURL: nil, registeredByUid: nil, hasWifi: true, hasPower: false),
 
             Store(id: "seed_shinjuku_06",
                   name: "マクドナルド 新宿東南口店", nameEn: "McDonald's Shinjuku Southeast Exit",
@@ -251,6 +253,101 @@ class StoreService {
         }
     }
 
+    // MARK: - Ranking: top users by contribution points
+    func fetchTopUsers(limit: Int = 20) async throws -> [RankingEntry] {
+        guard FirebaseApp.app() != nil else { return [] }
+        let snapshot = try await db.collection("users")
+            .order(by: "totalContributions", descending: true)
+            .limit(to: limit)
+            .getDocuments()
+        return snapshot.documents.enumerated().compactMap { idx, doc -> RankingEntry? in
+            let data = doc.data()
+            guard let name = data["displayName"] as? String else { return nil }
+            let pts = data["totalContributions"] as? Int ?? 0
+            let badges = data["badges"] as? [String] ?? []
+            return RankingEntry(rank: idx + 1, uid: doc.documentID,
+                                displayName: name, points: pts, badges: badges)
+        }
+    }
+
+    // MARK: - Favorites
+    func fetchFavoriteStoreIds(uid: String) async throws -> [String] {
+        guard FirebaseApp.app() != nil else { return [] }
+        let doc = try await db.collection("users").document(uid).getDocument()
+        return doc.data()?["favoriteStoreIds"] as? [String] ?? []
+    }
+
+    func toggleFavorite(storeId: String, uid: String, isFavoriting: Bool) async throws {
+        guard FirebaseApp.app() != nil else { return }
+        let ref = db.collection("users").document(uid)
+        if isFavoriting {
+            try await ref.updateData(["favoriteStoreIds": FieldValue.arrayUnion([storeId])])
+        } else {
+            try await ref.updateData(["favoriteStoreIds": FieldValue.arrayRemove([storeId])])
+        }
+    }
+
+    func fetchFavoriteStores(uid: String) async throws -> [Store] {
+        let ids = try await fetchFavoriteStoreIds(uid: uid)
+        guard !ids.isEmpty else { return [] }
+        var results: [Store] = []
+        for chunk in stride(from: 0, to: ids.count, by: 10).map({ Array(ids[$0..<min($0+10, ids.count)]) }) {
+            let snap = try await db.collection("stores")
+                .whereField(FieldPath.documentID(), in: chunk)
+                .getDocuments()
+            results += snap.documents.compactMap { (try? $0.data(as: StoreDTO.self))?.toStore(id: $0.documentID) }
+        }
+        return results
+    }
+
+    // MARK: - Photo upload (Sakura Internet経由)
+    func uploadStorePhoto(storeId: String, imageData: Data, uploadBaseURL: String) async throws -> String {
+        guard let url = URL(string: "\(uploadBaseURL)/upload.php") else {
+            throw PaymapError.firestoreError("Invalid upload URL")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"store_id\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(storeId)\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw PaymapError.firestoreError("Photo upload failed")
+        }
+        let json = try JSONDecoder().decode([String: String].self, from: data)
+        guard let photoURL = json["url"] else {
+            throw PaymapError.firestoreError("No URL in upload response")
+        }
+        try await db.collection("stores").document(storeId).updateData(["photoURL": photoURL])
+        return photoURL
+    }
+
+    // MARK: - Offline cache helpers
+    func cacheStores(_ stores: [Store]) {
+        if let data = try? JSONEncoder().encode(stores) {
+            UserDefaults.standard.set(data, forKey: "cachedStores")
+            UserDefaults.standard.set(Date(), forKey: "cachedStoresDate")
+        }
+    }
+
+    func loadCachedStores() -> [Store] {
+        guard let data = UserDefaults.standard.data(forKey: "cachedStores"),
+              let stores = try? JSONDecoder().decode([Store].self, from: data)
+        else { return [] }
+        return stores
+    }
+
     // MARK: - Payment reports
     func fetchPaymentReports(for storeId: String) async throws -> [PaymentReport] {
         let snapshot = try await db.collection("stores").document(storeId)
@@ -276,6 +373,16 @@ struct UserData {
     let badges: [String]
     let isPremium: Bool
     let photoURL: String?
+    var favoriteStoreIds: [String] = []
+}
+
+struct RankingEntry: Identifiable {
+    let rank: Int
+    let uid: String
+    let displayName: String
+    let points: Int
+    let badges: [String]
+    var id: String { uid }
 }
 
 struct PaymentReport {
@@ -300,6 +407,8 @@ struct StoreDTO: Codable {
     let addressEn: String?
     let photoURL: String?
     let registeredByUid: String?
+    let hasWifi: Bool?
+    let hasPower: Bool?
 
     init(from store: Store) {
         self.name = store.name
@@ -313,6 +422,8 @@ struct StoreDTO: Codable {
         self.addressEn = store.addressEn
         self.photoURL = store.photoURL
         self.registeredByUid = store.registeredByUid
+        self.hasWifi = store.hasWifi
+        self.hasPower = store.hasPower
     }
 
     func toStore(id: String) -> Store? {
@@ -324,7 +435,9 @@ struct StoreDTO: Codable {
             supportedPaymentMethods: confirmedPaymentMethods,
             address: address, addressEn: addressEn,
             photoURL: photoURL,
-            registeredByUid: registeredByUid
+            registeredByUid: registeredByUid,
+            hasWifi: hasWifi,
+            hasPower: hasPower
         )
     }
 }

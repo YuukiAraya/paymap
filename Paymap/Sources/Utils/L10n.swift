@@ -154,6 +154,68 @@ struct L10n {
     let okButton: String
     let errorTitle: String
     let notesLabel: String
+
+    // MARK: - Facilities (WiFi / Power)
+    let facilitiesSection: String
+    let hasWifiLabel: String
+    let hasPowerLabel: String
+    let facilityYes: String
+    let facilityNo: String
+    let facilityUnknown: String
+
+    // MARK: - Map Filter
+    let filterTitle: String
+    let filterByPayment: String
+    let filterByCategory: String
+    let filterByFacility: String
+    let filterWifi: String
+    let filterPower: String
+    let clearFilters: String
+    let applyFilters: String
+    let filterActive: String
+    let filterNoResults: String
+    let filterAllCategories: String
+    let advancedFilterPremium: String
+
+    // MARK: - Long Press Register
+    let longPressHint: String
+    let registerHereTitle: String
+    let registerHereButton: String
+    let cancelPinButton: String
+
+    // MARK: - Address Picker (Map Confirmation)
+    let addressRequired: String
+    let confirmOnMapButton: String
+    let addressPickerTitle: String
+    let dragToAdjust: String
+    let confirmLocationButton: String
+    let geocodingInProgress: String
+    let geocodeFailedError: String
+
+    // MARK: - Ranking
+    let rankingTitle: String
+    let rankingSection: String
+    let rankingEmpty: String
+    let rankingYou: String
+    let rankingPoints: String
+
+    // MARK: - Favorites
+    let favoritesTitle: String
+    let favoritesEmpty: String
+    let addFavorite: String
+    let removeFavorite: String
+    let favoritesSection: String
+    let favoritesRequiresPremium: String
+
+    // MARK: - Offline Mode
+    let offlineModeLabel: String
+    let showingCachedData: String
+
+    // MARK: - Store Detail Facilities Display
+    let wifiAvailable: String
+    let powerAvailable: String
+    let wifiUnavailable: String
+    let powerUnavailable: String
 }
 
 // MARK: - Japanese
@@ -271,7 +333,53 @@ extension L10n {
         guestName: "ゲスト",
         okButton: "OK",
         errorTitle: "エラー",
-        notesLabel: "注意事項"
+        notesLabel: "注意事項",
+        facilitiesSection: "設備情報",
+        hasWifiLabel: "フリーWiFi",
+        hasPowerLabel: "電源あり（利用可）",
+        facilityYes: "あり",
+        facilityNo: "なし",
+        facilityUnknown: "不明",
+        filterTitle: "フィルター",
+        filterByPayment: "決済手段で絞り込む",
+        filterByCategory: "カテゴリで絞り込む",
+        filterByFacility: "設備で絞り込む",
+        filterWifi: "フリーWiFiあり",
+        filterPower: "電源あり",
+        clearFilters: "フィルターをクリア",
+        applyFilters: "適用",
+        filterActive: "フィルター適用中",
+        filterNoResults: "条件に合う店舗がありません",
+        filterAllCategories: "すべてのカテゴリ",
+        advancedFilterPremium: "高度な絞り込みはプレミアム会員限定です",
+        longPressHint: "長押しで店舗を登録できます",
+        registerHereTitle: "この場所に店舗を登録",
+        registerHereButton: "ここに登録する",
+        cancelPinButton: "キャンセル",
+        addressRequired: "住所（必須）",
+        confirmOnMapButton: "地図で位置を確認・調整",
+        addressPickerTitle: "位置を確認",
+        dragToAdjust: "ピンをドラッグして位置を調整してください",
+        confirmLocationButton: "この位置で確定",
+        geocodingInProgress: "住所を検索中…",
+        geocodeFailedError: "住所から位置を取得できませんでした",
+        rankingTitle: "貢献度ランキング",
+        rankingSection: "ランキング",
+        rankingEmpty: "まだランキングデータがありません",
+        rankingYou: "あなた",
+        rankingPoints: "pt",
+        favoritesTitle: "お気に入り",
+        favoritesEmpty: "お気に入りの店舗がまだありません",
+        addFavorite: "お気に入りに追加",
+        removeFavorite: "お気に入りから削除",
+        favoritesSection: "お気に入り店舗",
+        favoritesRequiresPremium: "お気に入り機能はプレミアム会員限定です",
+        offlineModeLabel: "オフラインモード",
+        showingCachedData: "キャッシュされたデータを表示中",
+        wifiAvailable: "フリーWiFi あり",
+        powerAvailable: "電源 利用可",
+        wifiUnavailable: "フリーWiFi なし",
+        powerUnavailable: "電源 なし"
     )
 }
 
@@ -390,6 +498,52 @@ extension L10n {
         guestName: "Guest",
         okButton: "OK",
         errorTitle: "Error",
-        notesLabel: "Notes"
+        notesLabel: "Notes",
+        facilitiesSection: "Facilities",
+        hasWifiLabel: "Free WiFi",
+        hasPowerLabel: "Power Outlets Available",
+        facilityYes: "Available",
+        facilityNo: "Not Available",
+        facilityUnknown: "Unknown",
+        filterTitle: "Filter",
+        filterByPayment: "Filter by Payment",
+        filterByCategory: "Filter by Category",
+        filterByFacility: "Filter by Facility",
+        filterWifi: "Free WiFi",
+        filterPower: "Power Outlets",
+        clearFilters: "Clear Filters",
+        applyFilters: "Apply",
+        filterActive: "Filter Active",
+        filterNoResults: "No stores match your filters",
+        filterAllCategories: "All Categories",
+        advancedFilterPremium: "Advanced filters require Premium",
+        longPressHint: "Long-press on the map to register a store",
+        registerHereTitle: "Register Store Here",
+        registerHereButton: "Register Here",
+        cancelPinButton: "Cancel",
+        addressRequired: "Address (required)",
+        confirmOnMapButton: "Confirm on Map",
+        addressPickerTitle: "Confirm Location",
+        dragToAdjust: "Drag the map to adjust the pin position",
+        confirmLocationButton: "Confirm This Location",
+        geocodingInProgress: "Searching address…",
+        geocodeFailedError: "Could not find location for this address",
+        rankingTitle: "Contribution Ranking",
+        rankingSection: "Ranking",
+        rankingEmpty: "No ranking data yet",
+        rankingYou: "You",
+        rankingPoints: "pts",
+        favoritesTitle: "Favorites",
+        favoritesEmpty: "No favorite stores yet",
+        addFavorite: "Add to Favorites",
+        removeFavorite: "Remove from Favorites",
+        favoritesSection: "Favorite Stores",
+        favoritesRequiresPremium: "Favorites require Premium",
+        offlineModeLabel: "Offline Mode",
+        showingCachedData: "Showing cached data",
+        wifiAvailable: "Free WiFi Available",
+        powerAvailable: "Power Outlets Available",
+        wifiUnavailable: "No Free WiFi",
+        powerUnavailable: "No Power Outlets"
     )
 }
