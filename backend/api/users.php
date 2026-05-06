@@ -2,11 +2,12 @@
 /**
  * ユーザー API
  * GET  /api/users.php?action=ranking&limit=20    → 貢献度ランキング
- * GET  /api/users.php?uid=xxx                    → ユーザープロフィール
+ * GET  /api/users.php?uid=xxx                    → ユーザープロフィール（お気に入りID含む）
  * POST /api/users.php                            → ユーザー作成・更新
+ * POST /api/users.php?action=update_profile      → displayName / email 更新
  * POST /api/users.php?action=add_points          → ポイント追加
  * POST /api/users.php?action=toggle_favorite     → お気に入り切り替え
- * GET  /api/users.php?action=favorites&uid=xxx   → お気に入り店舗ID一覧
+ * POST /api/users.php?action=award_badge         → バッジ付与
  */
 
 require_once __DIR__ . '/config.php';
@@ -32,13 +33,13 @@ if ($method === 'GET' && $action === 'ranking') {
     $rows = $stmt->fetchAll();
 
     $rank = 1;
-    $entries = array_map(function($row) use (&$rank) {
+    $entries = array_map(function ($row) use (&$rank) {
         return [
-            'rank'         => $rank++,
-            'uid'          => $row['uid'],
-            'displayName'  => $row['display_name'] ?? 'Unknown',
-            'points'       => (int)$row['total_contributions'],
-            'badges'       => $row['badges'] ? explode(',', $row['badges']) : [],
+            'rank'        => $rank++,
+            'uid'         => $row['uid'],
+            'displayName' => $row['display_name'] ?? 'Unknown',
+            'points'      => (int)$row['total_contributions'],
+            'badges'      => $row['badges'] ? explode(',', $row['badges']) : [],
         ];
     }, $rows);
     jsonResponse(['ranking' => $entries]);
@@ -72,6 +73,24 @@ if ($method === 'GET' && isset($_GET['uid'])) {
         'badges'             => $badges,
         'favoriteStoreIds'   => $favorites,
     ]);
+}
+
+// ---- プロフィール更新（displayName / email）----
+if ($method === 'POST' && $action === 'update_profile') {
+    $body = getRequestBody();
+    $uid  = $body['uid'] ?? null;
+    if (!$uid) { errorResponse('uid required'); }
+
+    $pdo = getDB();
+    if (array_key_exists('displayName', $body) && $body['displayName'] !== null) {
+        $pdo->prepare("UPDATE users SET display_name = ? WHERE uid = ?")
+            ->execute([$body['displayName'], $uid]);
+    }
+    if (array_key_exists('email', $body) && $body['email'] !== null) {
+        $pdo->prepare("UPDATE users SET email = ? WHERE uid = ?")
+            ->execute([$body['email'], $uid]);
+    }
+    jsonResponse(['success' => true]);
 }
 
 // ---- お気に入り切り替え ----
@@ -113,6 +132,20 @@ if ($method === 'POST' && $action === 'add_points') {
     jsonResponse(['success' => true, 'total' => $total, 'newBadges' => $newBadges]);
 }
 
+// ---- バッジ付与 ----
+if ($method === 'POST' && $action === 'award_badge') {
+    $body    = getRequestBody();
+    $uid     = $body['uid']      ?? null;
+    $badgeId = $body['badge_id'] ?? null;
+    if (!$uid || !$badgeId) { errorResponse('uid and badge_id required'); }
+
+    $pdo = getDB();
+    // ユーザーが存在しない場合は何もしない（サイレント）
+    $pdo->prepare("INSERT IGNORE INTO user_badges (uid, badge_id) VALUES (?, ?)")
+        ->execute([$uid, $badgeId]);
+    jsonResponse(['success' => true]);
+}
+
 // ---- ユーザー作成・更新 ----
 if ($method === 'POST') {
     $body = getRequestBody();
@@ -134,10 +167,10 @@ errorResponse('Invalid request', 400);
 // ---- バッジ付与ヘルパー ----
 function checkAndAwardBadges(PDO $pdo, string $uid, int $total): array {
     $thresholds = [
-        'firstPost'  => 1,
-        'br10'       => 10,
-        'br50'       => 50,
-        'brMaster'   => 200,
+        'firstPost' => 1,
+        'br10'      => 10,
+        'br50'      => 50,
+        'brMaster'  => 200,
     ];
     $stmt = $pdo->prepare("SELECT badge_id FROM user_badges WHERE uid = ?");
     $stmt->execute([$uid]);

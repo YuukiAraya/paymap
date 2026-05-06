@@ -1,174 +1,196 @@
 import Foundation
-import FirebaseCore
-import FirebaseFirestore
 import FirebaseAuth
 
+// さくらインターネット PHP API のベース URL
+private let kAPIBase = "https://coussinet.sakura.ne.jp/paymap/api"
+
 class StoreService {
-    private lazy var db = Firestore.firestore()
 
-    // MARK: - Fetch stores near a location (bounding box GeoQuery)
-    func fetchStores(near latitude: Double, longitude: Double, radiusKm: Double = 20.0) async throws -> [Store] {
-        guard FirebaseApp.app() != nil else { return [] }
+    // MARK: - Networking helpers
 
-        let latDelta = radiusKm / 111.0
-        let lngDelta = radiusKm / (111.0 * cos(latitude * .pi / 180))
-
-        let snapshot = try await db.collection("stores")
-            .whereField("latitude", isGreaterThan: latitude - latDelta)
-            .whereField("latitude", isLessThan: latitude + latDelta)
-            .limit(to: 100)
-            .getDocuments()
-
-        let minLng = longitude - lngDelta
-        let maxLng = longitude + lngDelta
-
-        return snapshot.documents.compactMap { doc -> Store? in
-            guard let store = (try? doc.data(as: StoreDTO.self))?.toStore(id: doc.documentID) else { return nil }
-            guard store.location.longitude >= minLng, store.location.longitude <= maxLng else { return nil }
-            return store
+    private func get<R: Decodable>(_ path: String, query: [String: String] = [:]) async throws -> R {
+        var comps = URLComponents(string: "\(kAPIBase)/\(path)")!
+        if !query.isEmpty {
+            comps.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
+        guard let url = comps.url else { throw PaymapError.apiError("Bad URL") }
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(R.self, from: data)
+    }
+
+    private func post<B: Encodable, R: Decodable>(
+        _ path: String, body: B, action: String? = nil
+    ) async throws -> R {
+        let urlStr = action.map { "\(kAPIBase)/\(path)?action=\($0)" } ?? "\(kAPIBase)/\(path)"
+        guard let url = URL(string: urlStr) else { throw PaymapError.apiError("Bad URL") }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(body)
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(R.self, from: data)
+    }
+
+    // MARK: - Fetch stores near a location
+
+    func fetchStores(near latitude: Double, longitude: Double, radiusKm: Double = 20.0) async throws -> [Store] {
+        let res: StoreListResponse = try await get("stores.php", query: [
+            "lat": "\(latitude)", "lng": "\(longitude)", "radius": "\(radiusKm)"
+        ])
+        return res.stores.compactMap { $0.toStore() }
+    }
+
+    // MARK: - Fetch stores by user
+
+    func fetchStoresByUser(uid: String) async throws -> [Store] {
+        let res: StoreListResponse = try await get("stores.php", query: ["uid": uid])
+        return res.stores.compactMap { $0.toStore() }
     }
 
     // MARK: - Add or update store
+
     func upsertStore(_ store: Store) async throws {
-        let dto = StoreDTO(from: store)
-        try db.collection("stores").document(store.id).setData(from: dto, merge: true)
+        let _: SuccessResponse = try await post("stores.php", body: StoreUpsertBody(from: store))
     }
 
     // MARK: - Submit 80% consensus report
+
     func submitPaymentReport(storeId: String, methodId: String, isSupported: Bool) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw PaymapError.notAuthenticated
         }
-
-        let reportRef = db.collection("stores").document(storeId)
-            .collection("payment_reports").document(methodId)
-
-        _ = try await db.runTransaction { transaction, errorPointer -> Any? in
-            let reportDoc: DocumentSnapshot
-            do { reportDoc = try transaction.getDocument(reportRef) }
-            catch let e as NSError { errorPointer?.pointee = e; return nil }
-
-            let data = reportDoc.data() ?? [:]
-            var reporters = data["reporters"] as? [String: Bool] ?? [:]
-            let previous = reporters[uid]
-            reporters[uid] = isSupported
-
-            var supported = data["supportedCount"] as? Int ?? 0
-            var unsupported = data["unsupportedCount"] as? Int ?? 0
-
-            if let prev = previous {
-                if prev != isSupported {
-                    if isSupported { supported += 1; unsupported -= 1 }
-                    else { supported -= 1; unsupported += 1 }
-                }
-            } else {
-                if isSupported { supported += 1 } else { unsupported += 1 }
-            }
-
-            let total = supported + unsupported
-            let rate = total > 0 ? Double(supported) / Double(total) : 0.0
-            let isActive = rate >= 0.8
-
-            transaction.setData([
-                "methodId": methodId, "supportedCount": supported,
-                "unsupportedCount": unsupported, "totalReports": total,
-                "approvalRate": rate, "isActive": isActive, "reporters": reporters
-            ], forDocument: reportRef, merge: false)
-
-            let storeRef = self.db.collection("stores").document(storeId)
-            if isActive {
-                transaction.updateData(["confirmedPaymentMethods": FieldValue.arrayUnion([methodId])], forDocument: storeRef)
-            } else {
-                transaction.updateData(["confirmedPaymentMethods": FieldValue.arrayRemove([methodId])], forDocument: storeRef)
-            }
-            return nil
-        }
+        let body = PaymentReportBody(
+            storeId: storeId, methodId: methodId, userId: uid, isSupported: isSupported)
+        let _: SuccessResponse = try await post("reports.php", body: body)
     }
 
     // MARK: - Update store facilities (WiFi / Power)
+
     func updateStoreFacilities(storeId: String, hasWifi: Bool?, hasPower: Bool?) async throws {
-        guard FirebaseApp.app() != nil else { return }
-        var data: [String: Any] = [:]
-        if let wifi  = hasWifi  { data["hasWifi"]  = wifi  }
-        if let power = hasPower { data["hasPower"] = power }
-        guard !data.isEmpty else { return }
-        try await db.collection("stores").document(storeId).updateData(data)
+        let body = UpdateFacilitiesBody(storeId: storeId, hasWifi: hasWifi, hasPower: hasPower)
+        let _: SuccessResponse = try await post("stores.php", body: body, action: "update_facilities")
     }
 
-    // MARK: - Fetch stores by user
-    func fetchStoresByUser(uid: String) async throws -> [Store] {
-        guard FirebaseApp.app() != nil else { return [] }
-        let snapshot = try await db.collection("stores")
-            .whereField("registeredByUid", isEqualTo: uid)
-            .getDocuments()
-        return snapshot.documents.compactMap { (try? $0.data(as: StoreDTO.self))?.toStore(id: $0.documentID) }
-    }
+    // MARK: - User profile
 
-    // MARK: - User profile (Firestore)
     func fetchOrCreateUser(uid: String, displayName: String, email: String) async throws -> UserData {
-        guard FirebaseApp.app() != nil else {
-            return UserData(totalContributions: 0, badges: [], isPremium: false, photoURL: nil)
-        }
-        let ref = db.collection("users").document(uid)
-        let doc = try await ref.getDocument()
-
-        if let data = doc.data() {
+        if let res: UserProfileResponse = try? await get("users.php", query: ["uid": uid]) {
             return UserData(
-                totalContributions: data["totalContributions"] as? Int ?? 0,
-                badges: data["badges"] as? [String] ?? [],
-                isPremium: data["isPremium"] as? Bool ?? false,
-                photoURL: data["photoURL"] as? String,
-                favoriteStoreIds: data["favoriteStoreIds"] as? [String] ?? []
+                totalContributions: res.totalContributions ?? 0,
+                badges: res.badges ?? [],
+                isPremium: res.isPremium ?? false,
+                photoURL: res.photoURL,
+                favoriteStoreIds: res.favoriteStoreIds ?? []
             )
-        } else {
-            let newData: [String: Any] = [
-                "displayName": displayName, "email": email,
-                "totalContributions": 0, "badges": [],
-                "isPremium": false, "createdAt": Date(),
-                "favoriteStoreIds": []
-            ]
-            try await ref.setData(newData)
-            return UserData(totalContributions: 0, badges: [], isPremium: false, photoURL: nil)
         }
+        let _: SuccessResponse = try await post(
+            "users.php",
+            body: UserCreateBody(uid: uid, displayName: displayName, email: email))
+        return UserData(totalContributions: 0, badges: [], isPremium: false, photoURL: nil)
+    }
+
+    func updateUserProfile(uid: String, displayName: String? = nil, email: String? = nil) async throws {
+        let body = UserUpdateBody(uid: uid, displayName: displayName, email: email)
+        let _: SuccessResponse = try await post("users.php", body: body, action: "update_profile")
     }
 
     // MARK: - Add contribution points + evaluate badges
-    // Returns (newTotal, newlyEarnedBadgeIDs)
+
     func addPoints(to uid: String, points: Int) async throws -> (total: Int, newBadges: [String]) {
-        guard FirebaseApp.app() != nil else { return (0, []) }
-        let ref = db.collection("users").document(uid)
-
-        let doc = try await ref.getDocument()
-        let current = doc.data()?["totalContributions"] as? Int ?? 0
-        var badges = doc.data()?["badges"] as? [String] ?? []
-        let total = current + points
-
-        var newBadges: [String] = []
-        if total >= 1,   !badges.contains("firstPost") { newBadges.append("firstPost") }
-        if total >= 10,  !badges.contains("br10")      { newBadges.append("br10") }
-        if total >= 50,  !badges.contains("br50")      { newBadges.append("br50") }
-        if total >= 200, !badges.contains("brMaster")  { newBadges.append("brMaster") }
-
-        badges.append(contentsOf: newBadges)
-        try await ref.updateData(["totalContributions": total, "badges": badges])
-        return (total, newBadges)
+        let res: AddPointsResponse = try await post(
+            "users.php",
+            body: AddPointsBody(uid: uid, points: points),
+            action: "add_points")
+        return (res.total, res.newBadges)
     }
 
     func awardExplorerBadge(to uid: String) async throws {
-        guard FirebaseApp.app() != nil else { return }
-        let ref = db.collection("users").document(uid)
-        let doc = try await ref.getDocument()
-        var badges = doc.data()?["badges"] as? [String] ?? []
-        if !badges.contains("brExplorer") {
-            badges.append("brExplorer")
-            try await ref.updateData(["badges": badges])
+        let body = AwardBadgeBody(uid: uid, badgeId: "brExplorer")
+        let _: SuccessResponse = try await post("users.php", body: body, action: "award_badge")
+    }
+
+    // MARK: - Ranking
+
+    func fetchTopUsers(limit: Int = 20) async throws -> [RankingEntry] {
+        let res: RankingListResponse = try await get("users.php", query: [
+            "action": "ranking", "limit": "\(limit)"
+        ])
+        return res.ranking
+    }
+
+    // MARK: - Favorites
+
+    func fetchFavoriteStoreIds(uid: String) async throws -> [String] {
+        let res: UserProfileResponse = try await get("users.php", query: ["uid": uid])
+        return res.favoriteStoreIds ?? []
+    }
+
+    func toggleFavorite(storeId: String, uid: String, isFavoriting: Bool) async throws {
+        let body = ToggleFavoriteBody(uid: uid, storeId: storeId, isFavorite: isFavoriting)
+        let _: SuccessResponse = try await post("users.php", body: body, action: "toggle_favorite")
+    }
+
+    func fetchFavoriteStores(uid: String) async throws -> [Store] {
+        let ids = try await fetchFavoriteStoreIds(uid: uid)
+        guard !ids.isEmpty else { return [] }
+        let res: StoreListResponse = try await get("stores.php", query: [
+            "ids": ids.joined(separator: ",")
+        ])
+        return res.stores.compactMap { $0.toStore() }
+    }
+
+    // MARK: - Payment reports
+
+    func fetchPaymentReports(for storeId: String) async throws -> [PaymentReport] {
+        let res: PaymentReportsResponse = try await get("reports.php", query: ["store_id": storeId])
+        return res.reports.map {
+            PaymentReport(
+                methodId: $0.methodId,
+                supportedCount: $0.supportedCount,
+                unsupportedCount: $0.unsupportedCount,
+                totalReports: $0.totalReports,
+                approvalRate: $0.approvalRate,
+                isActive: $0.isActive
+            )
         }
     }
 
+    // MARK: - Photo upload (Sakura Internet uploads ディレクトリへ)
+
+    func uploadStorePhoto(storeId: String, imageData: Data, uploadBaseURL: String) async throws -> String {
+        guard let url = URL(string: "\(uploadBaseURL)/upload.php") else {
+            throw PaymapError.apiError("Invalid upload URL")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"store_id\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(storeId)\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw PaymapError.apiError("Photo upload failed")
+        }
+        let json = try JSONDecoder().decode([String: String].self, from: data)
+        guard let photoURL = json["url"] else {
+            throw PaymapError.apiError("No URL in upload response")
+        }
+        return photoURL
+    }
+
     // MARK: - Seed sample stores (Shinjuku, fixed IDs to prevent duplicates)
+
     func seedShinjukuStores() async throws {
-        guard FirebaseApp.app() != nil else { return }
         let stores: [Store] = [
             Store(id: "seed_shinjuku_01",
                   name: "セブンイレブン 新宿南口店", nameEn: "7-Eleven Shinjuku South Exit",
@@ -183,8 +205,7 @@ class StoreService {
                   name: "ローソン 新宿三丁目店", nameEn: "Lawson Shinjuku 3-chome",
                   location: .init(latitude: 35.6921, longitude: 139.7058),
                   category: .convenienceStore,
-                  supportedPaymentMethods: ["paypay","suica","pasmo","waon",
-                                            "visa","mastercard","id_payment"],
+                  supportedPaymentMethods: ["paypay","suica","pasmo","waon","visa","mastercard","id_payment"],
                   address: "東京都新宿区新宿3-15", addressEn: "3-15 Shinjuku, Shinjuku-ku, Tokyo",
                   photoURL: nil, registeredByUid: nil),
 
@@ -202,8 +223,7 @@ class StoreService {
                   nameEn: "Starbucks Shinjuku Southern Terrace",
                   location: .init(latitude: 35.6884, longitude: 139.7013),
                   category: .cafe,
-                  supportedPaymentMethods: ["visa","mastercard","jcb","amex",
-                                            "suica","pasmo","paypay"],
+                  supportedPaymentMethods: ["visa","mastercard","jcb","amex","suica","pasmo","paypay"],
                   address: "東京都渋谷区代々木2-2-1", addressEn: "2-2-1 Yoyogi, Shibuya-ku, Tokyo",
                   photoURL: nil, registeredByUid: nil, hasWifi: true, hasPower: true),
 
@@ -263,87 +283,8 @@ class StoreService {
         }
     }
 
-    // MARK: - Ranking: top users by contribution points
-    func fetchTopUsers(limit: Int = 20) async throws -> [RankingEntry] {
-        guard FirebaseApp.app() != nil else { return [] }
-        let snapshot = try await db.collection("users")
-            .order(by: "totalContributions", descending: true)
-            .limit(to: limit)
-            .getDocuments()
-        return snapshot.documents.enumerated().compactMap { idx, doc -> RankingEntry? in
-            let data = doc.data()
-            guard let name = data["displayName"] as? String else { return nil }
-            let pts = data["totalContributions"] as? Int ?? 0
-            let badges = data["badges"] as? [String] ?? []
-            return RankingEntry(rank: idx + 1, uid: doc.documentID,
-                                displayName: name, points: pts, badges: badges)
-        }
-    }
-
-    // MARK: - Favorites
-    func fetchFavoriteStoreIds(uid: String) async throws -> [String] {
-        guard FirebaseApp.app() != nil else { return [] }
-        let doc = try await db.collection("users").document(uid).getDocument()
-        return doc.data()?["favoriteStoreIds"] as? [String] ?? []
-    }
-
-    func toggleFavorite(storeId: String, uid: String, isFavoriting: Bool) async throws {
-        guard FirebaseApp.app() != nil else { return }
-        let ref = db.collection("users").document(uid)
-        if isFavoriting {
-            try await ref.updateData(["favoriteStoreIds": FieldValue.arrayUnion([storeId])])
-        } else {
-            try await ref.updateData(["favoriteStoreIds": FieldValue.arrayRemove([storeId])])
-        }
-    }
-
-    func fetchFavoriteStores(uid: String) async throws -> [Store] {
-        let ids = try await fetchFavoriteStoreIds(uid: uid)
-        guard !ids.isEmpty else { return [] }
-        var results: [Store] = []
-        for chunk in stride(from: 0, to: ids.count, by: 10).map({ Array(ids[$0..<min($0+10, ids.count)]) }) {
-            let snap = try await db.collection("stores")
-                .whereField(FieldPath.documentID(), in: chunk)
-                .getDocuments()
-            results += snap.documents.compactMap { (try? $0.data(as: StoreDTO.self))?.toStore(id: $0.documentID) }
-        }
-        return results
-    }
-
-    // MARK: - Photo upload (Sakura Internet経由)
-    func uploadStorePhoto(storeId: String, imageData: Data, uploadBaseURL: String) async throws -> String {
-        guard let url = URL(string: "\(uploadBaseURL)/upload.php") else {
-            throw PaymapError.firestoreError("Invalid upload URL")
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"store_id\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(storeId)\r\n".data(using: .utf8)!)
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        request.httpBody = body
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw PaymapError.firestoreError("Photo upload failed")
-        }
-        let json = try JSONDecoder().decode([String: String].self, from: data)
-        guard let photoURL = json["url"] else {
-            throw PaymapError.firestoreError("No URL in upload response")
-        }
-        try await db.collection("stores").document(storeId).updateData(["photoURL": photoURL])
-        return photoURL
-    }
-
     // MARK: - Offline cache helpers
+
     func cacheStores(_ stores: [Store]) {
         if let data = try? JSONEncoder().encode(stores) {
             UserDefaults.standard.set(data, forKey: "cachedStores")
@@ -357,26 +298,9 @@ class StoreService {
         else { return [] }
         return stores
     }
-
-    // MARK: - Payment reports
-    func fetchPaymentReports(for storeId: String) async throws -> [PaymentReport] {
-        let snapshot = try await db.collection("stores").document(storeId)
-            .collection("payment_reports").getDocuments()
-        return snapshot.documents.compactMap { doc -> PaymentReport? in
-            let data = doc.data()
-            return PaymentReport(
-                methodId: doc.documentID,
-                supportedCount: data["supportedCount"] as? Int ?? 0,
-                unsupportedCount: data["unsupportedCount"] as? Int ?? 0,
-                totalReports: data["totalReports"] as? Int ?? 0,
-                approvalRate: data["approvalRate"] as? Double ?? 0.0,
-                isActive: data["isActive"] as? Bool ?? false
-            )
-        }
-    }
 }
 
-// MARK: - Supporting Types
+// MARK: - Supporting Types (public — used by ViewModels / Views)
 
 struct UserData {
     let totalContributions: Int
@@ -386,13 +310,17 @@ struct UserData {
     var favoriteStoreIds: [String] = []
 }
 
-struct RankingEntry: Identifiable {
+struct RankingEntry: Identifiable, Codable {
     let rank: Int
     let uid: String
     let displayName: String
     let points: Int
     let badges: [String]
     var id: String { uid }
+
+    enum CodingKeys: String, CodingKey {
+        case rank, uid, displayName, points, badges
+    }
 }
 
 struct PaymentReport {
@@ -405,56 +333,9 @@ struct PaymentReport {
     var approvalPercentage: Int { Int(approvalRate * 100) }
 }
 
-struct StoreDTO: Codable {
-    let name: String
-    let nameEn: String?
-    let category: String
-    let latitude: Double
-    let longitude: Double
-    let confirmedPaymentMethods: [String]
-    let lastUpdated: Date
-    let address: String?
-    let addressEn: String?
-    let photoURL: String?
-    let registeredByUid: String?
-    let hasWifi: Bool?
-    let hasPower: Bool?
-
-    init(from store: Store) {
-        self.name = store.name
-        self.nameEn = store.nameEn
-        self.category = store.category.rawValue
-        self.latitude = store.location.latitude
-        self.longitude = store.location.longitude
-        self.confirmedPaymentMethods = store.supportedPaymentMethods
-        self.lastUpdated = Date()
-        self.address = store.address
-        self.addressEn = store.addressEn
-        self.photoURL = store.photoURL
-        self.registeredByUid = store.registeredByUid
-        self.hasWifi = store.hasWifi
-        self.hasPower = store.hasPower
-    }
-
-    func toStore(id: String) -> Store? {
-        guard let category = StoreCategory(rawValue: category) else { return nil }
-        return Store(
-            id: id, name: name, nameEn: nameEn,
-            location: Store.Coordinate(latitude: latitude, longitude: longitude),
-            category: category,
-            supportedPaymentMethods: confirmedPaymentMethods,
-            address: address, addressEn: addressEn,
-            photoURL: photoURL,
-            registeredByUid: registeredByUid,
-            hasWifi: hasWifi,
-            hasPower: hasPower
-        )
-    }
-}
-
 enum PaymapError: LocalizedError {
     case notAuthenticated
-    case firestoreError(String)
+    case apiError(String)
 
     private static var isEnglish: Bool {
         UserDefaults.standard.string(forKey: "appLanguage") == "en"
@@ -465,8 +346,189 @@ enum PaymapError: LocalizedError {
         switch self {
         case .notAuthenticated:
             return en ? "Please sign in to continue." : "ログインが必要です"
-        case .firestoreError(let msg):
-            return en ? "Database error: \(msg)" : "データベースエラー: \(msg)"
+        case .apiError(let msg):
+            return en ? "Server error: \(msg)" : "サーバーエラー: \(msg)"
         }
+    }
+}
+
+// MARK: - Private API response / request types
+
+private struct StoreListResponse: Decodable {
+    let stores: [APIStore]
+}
+
+private struct APIStore: Decodable {
+    let id: String
+    let name: String
+    let nameEn: String?
+    let category: String
+    let location: APILocation
+    let address: String?
+    let addressEn: String?
+    let photoURL: String?
+    let registeredByUid: String?
+    let hasWifi: Bool?
+    let hasPower: Bool?
+    let supportedPaymentMethods: [String]
+
+    func toStore() -> Store? {
+        guard let cat = StoreCategory(rawValue: category) else { return nil }
+        return Store(
+            id: id, name: name, nameEn: nameEn,
+            location: .init(latitude: location.latitude, longitude: location.longitude),
+            category: cat,
+            supportedPaymentMethods: supportedPaymentMethods,
+            address: address, addressEn: addressEn,
+            photoURL: photoURL,
+            registeredByUid: registeredByUid,
+            hasWifi: hasWifi,
+            hasPower: hasPower
+        )
+    }
+}
+
+private struct APILocation: Decodable {
+    let latitude: Double
+    let longitude: Double
+}
+
+private struct UserProfileResponse: Decodable {
+    let uid: String?
+    let displayName: String?
+    let email: String?
+    let totalContributions: Int?
+    let isPremium: Bool?
+    let photoURL: String?
+    let badges: [String]?
+    let favoriteStoreIds: [String]?
+}
+
+private struct AddPointsResponse: Decodable {
+    let success: Bool
+    let total: Int
+    let newBadges: [String]
+}
+
+private struct RankingListResponse: Decodable {
+    let ranking: [RankingEntry]
+}
+
+private struct PaymentReportsResponse: Decodable {
+    let reports: [APIPaymentReportSummary]
+}
+
+private struct APIPaymentReportSummary: Decodable {
+    let methodId: String
+    let supportedCount: Int
+    let unsupportedCount: Int
+    let totalReports: Int
+    let approvalRate: Double
+    let isActive: Bool
+}
+
+private struct SuccessResponse: Decodable {
+    let success: Bool
+}
+
+// --- Request body types ---
+
+private struct StoreUpsertBody: Encodable {
+    let id: String
+    let name: String
+    let nameEn: String?
+    let category: String
+    let location: EncodableLocation
+    let address: String?
+    let addressEn: String?
+    let photoURL: String?
+    let registeredByUid: String?
+    let hasWifi: Bool?
+    let hasPower: Bool?
+    let supportedPaymentMethods: [String]
+
+    init(from store: Store) {
+        id = store.id
+        name = store.name
+        nameEn = store.nameEn
+        category = store.category.rawValue
+        location = EncodableLocation(latitude: store.location.latitude, longitude: store.location.longitude)
+        address = store.address
+        addressEn = store.addressEn
+        photoURL = store.photoURL
+        registeredByUid = store.registeredByUid
+        hasWifi = store.hasWifi
+        hasPower = store.hasPower
+        supportedPaymentMethods = store.supportedPaymentMethods
+    }
+}
+
+private struct EncodableLocation: Encodable {
+    let latitude: Double
+    let longitude: Double
+}
+
+private struct PaymentReportBody: Encodable {
+    let storeId: String
+    let methodId: String
+    let userId: String
+    let isSupported: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case storeId     = "store_id"
+        case methodId    = "method_id"
+        case userId      = "user_id"
+        case isSupported = "is_supported"
+    }
+}
+
+private struct UpdateFacilitiesBody: Encodable {
+    let storeId: String
+    let hasWifi: Bool?
+    let hasPower: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case storeId  = "store_id"
+        case hasWifi
+        case hasPower
+    }
+}
+
+private struct UserCreateBody: Encodable {
+    let uid: String
+    let displayName: String?
+    let email: String?
+}
+
+private struct UserUpdateBody: Encodable {
+    let uid: String
+    let displayName: String?
+    let email: String?
+}
+
+private struct AddPointsBody: Encodable {
+    let uid: String
+    let points: Int
+}
+
+private struct AwardBadgeBody: Encodable {
+    let uid: String
+    let badgeId: String
+
+    enum CodingKeys: String, CodingKey {
+        case uid
+        case badgeId = "badge_id"
+    }
+}
+
+private struct ToggleFavoriteBody: Encodable {
+    let uid: String
+    let storeId: String
+    let isFavorite: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case uid
+        case storeId    = "store_id"
+        case isFavorite = "is_favorite"
     }
 }

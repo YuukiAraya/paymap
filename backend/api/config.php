@@ -1,18 +1,18 @@
 <?php
 // ============================================================
 // データベース接続設定
-// さくらインターネット コントロールパネルで確認した値を入力してください
+// ⚠️  本番パスワードが含まれます — 公開リポジトリにコミットしないこと
 // ============================================================
 
-define('DB_HOST', 'mysqlXXX.db.sakura.ne.jp'); // さくらのMySQL接続先（コントロールパネルで確認）
-define('DB_NAME', 'アカウント名_paymap');       // データベース名（アカウント名_paymap が推奨）
-define('DB_USER', 'アカウント名');              // データベースユーザー名
-define('DB_PASS', 'パスワード');                // データベースパスワード
+define('DB_HOST',    'mysql3115.db.sakura.ne.jp');
+define('DB_NAME',    'coussinet_paymap');
+define('DB_USER',    'coussinet');
+define('DB_PASS',    'midori0812');
 define('DB_CHARSET', 'utf8mb4');
 
 // 写真アップロード設定
-define('UPLOAD_DIR', __DIR__ . '/../uploads/');   // アップロード先ディレクトリ
-define('UPLOAD_BASE_URL', 'https://yourserver.sakura.ne.jp/paymap/uploads/'); // 公開URL
+define('UPLOAD_DIR',      __DIR__ . '/../uploads/');
+define('UPLOAD_BASE_URL', 'https://coussinet.sakura.ne.jp/paymap/uploads/');
 
 // JWT シークレット（Firebase UID の簡易検証 or 独自認証用）
 define('JWT_SECRET', 'your_jwt_secret_here');
@@ -52,4 +52,27 @@ function errorResponse(string $msg, int $code = 400): void {
 function getRequestBody(): array {
     $raw = file_get_contents('php://input');
     return json_decode($raw, true) ?? [];
+}
+
+// 店舗行を API レスポンス形式に変換する共通ヘルパー
+function storeRowToArray(array $row): array {
+    return [
+        'id'                      => $row['id'],
+        'name'                    => $row['name'],
+        'nameEn'                  => $row['name_en'],
+        'category'                => $row['category'],
+        'location'                => [
+            'latitude'  => (float)$row['latitude'],
+            'longitude' => (float)$row['longitude'],
+        ],
+        'address'                 => $row['address'],
+        'addressEn'               => $row['address_en'],
+        'photoURL'                => $row['photo_url'],
+        'registeredByUid'         => $row['registered_by'],
+        'hasWifi'                 => $row['has_wifi']  === null ? null : (bool)$row['has_wifi'],
+        'hasPower'                => $row['has_power'] === null ? null : (bool)$row['has_power'],
+        'supportedPaymentMethods' => $row['confirmed_methods']
+                                        ? explode(',', $row['confirmed_methods'])
+                                        : [],
+    ];
 }

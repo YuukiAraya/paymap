@@ -2,7 +2,6 @@ import Foundation
 import Combine
 import FirebaseCore
 import FirebaseAuth
-import FirebaseFirestore
 import GoogleSignIn
 import AuthenticationServices
 import CryptoKit
@@ -149,17 +148,14 @@ class AuthViewModel: NSObject, ObservableObject {
     // MARK: - Update Display Name
     func updateDisplayName(_ name: String) async throws {
         guard FirebaseApp.app() != nil, let user = Auth.auth().currentUser else {
-            await MainActor.run {
-                userProfile?.displayName = name
-            }
+            await MainActor.run { userProfile?.displayName = name }
             return
         }
         let request = user.createProfileChangeRequest()
         request.displayName = name
         try await request.commitChanges()
         if let uid = userProfile?.uid {
-            try? await Firestore.firestore().collection("users").document(uid)
-                .updateData(["displayName": name])
+            try? await storeService.updateUserProfile(uid: uid, displayName: name)
         }
         await MainActor.run { userProfile?.displayName = name }
     }
@@ -169,9 +165,8 @@ class AuthViewModel: NSObject, ObservableObject {
         if FirebaseApp.app() != nil, let user = Auth.auth().currentUser {
             try await user.updateEmail(to: email)
         }
-        if let uid = userProfile?.uid, FirebaseApp.app() != nil {
-            try? await Firestore.firestore().collection("users")
-                .document(uid).updateData(["email": email])
+        if let uid = userProfile?.uid {
+            try? await storeService.updateUserProfile(uid: uid, email: email)
         }
         await MainActor.run { userProfile?.email = email }
     }

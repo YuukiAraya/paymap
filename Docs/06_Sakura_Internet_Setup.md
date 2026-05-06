@@ -54,7 +54,7 @@ iOSアプリ (PayMap)
 |------|-----|
 | FTPサーバー | `coussinet.sakura.ne.jp` |
 | ユーザー名 | coussinet |
-| パスワード | midori0812 |
+| パスワード | coussinet0606 |
 
 ### アップロード先
 
