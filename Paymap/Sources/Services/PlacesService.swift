@@ -5,7 +5,7 @@ protocol PlacesServiceProtocol {
     func fetchNearbyPlaces(coordinate: CLLocationCoordinate2D, radius: Double) async throws -> [Store]
 }
 
-// MARK: - Google Places Nearby Search (REST)
+// MARK: - Google Places API (New) v1
 class PlacesService: PlacesServiceProtocol {
     private let apiKey: String
 
@@ -18,75 +18,92 @@ class PlacesService: PlacesServiceProtocol {
             return MockPlacesService().mockStores(near: coordinate)
         }
         do {
-            var components = URLComponents(string: "https://maps.googleapis.com/maps/api/place/nearbysearch/json")!
-            components.queryItems = [
-                URLQueryItem(name: "location", value: "\(coordinate.latitude),\(coordinate.longitude)"),
-                URLQueryItem(name: "radius",   value: "\(Int(radius))"),
-                URLQueryItem(name: "language", value: "ja"),
-                URLQueryItem(name: "key",      value: apiKey),
+            guard let url = URL(string: "https://places.googleapis.com/v1/places:searchNearby") else {
+                return MockPlacesService().mockStores(near: coordinate)
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue(apiKey, forHTTPHeaderField: "X-Goog-Api-Key")
+            request.setValue(
+                "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.photos",
+                forHTTPHeaderField: "X-Goog-FieldMask"
+            )
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body: [String: Any] = [
+                "locationRestriction": [
+                    "circle": [
+                        "center": [
+                            "latitude":  coordinate.latitude,
+                            "longitude": coordinate.longitude,
+                        ],
+                        "radius": radius,
+                    ],
+                ],
+                "maxResultCount": 20,
+                "languageCode": "ja",
             ]
-            guard let url = components.url else { throw URLError(.badURL) }
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-            let results = try JSONDecoder().decode(PlacesResponse.self, from: data).results.compactMap { Store(from: $0) }
-            // API が結果を返せない場合もモックにフォールバック
-            return results.isEmpty ? MockPlacesService().mockStores(near: coordinate) : results
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                return MockPlacesService().mockStores(near: coordinate)
+            }
+            let decoded = try JSONDecoder().decode(NewPlacesResponse.self, from: data)
+            let stores = decoded.places?.compactMap { Store(fromNew: $0, apiKey: apiKey) } ?? []
+            return stores.isEmpty ? MockPlacesService().mockStores(near: coordinate) : stores
         } catch {
             return MockPlacesService().mockStores(near: coordinate)
         }
     }
 }
 
-// MARK: - Response Models
-private struct PlacesResponse: Decodable {
-    let results: [PlaceResult]
+// MARK: - New Places API response models
+
+private struct NewPlacesResponse: Decodable {
+    let places: [NewPlaceResult]?
 }
 
-private struct PlaceResult: Decodable {
-    let placeId: String
-    let name: String
-    let vicinity: String?
-    let geometry: Geometry?
+private struct NewPlaceResult: Decodable {
+    let id: String
+    let displayName: DisplayName?
+    let formattedAddress: String?
+    let location: LatLng?
     let types: [String]?
     let photos: [PlacePhoto]?
 
-    enum CodingKeys: String, CodingKey {
-        case placeId = "place_id"
-        case name, vicinity, geometry, types, photos
-    }
-
-    struct Geometry: Decodable {
-        let location: LatLng
+    struct DisplayName: Decodable {
+        let text: String
     }
     struct LatLng: Decodable {
-        let lat: Double
-        let lng: Double
+        let latitude: Double
+        let longitude: Double
     }
     struct PlacePhoto: Decodable {
-        let photoReference: String
-        enum CodingKeys: String, CodingKey { case photoReference = "photo_reference" }
+        // e.g. "places/ChIJ.../photos/AbCd..."
+        let name: String
     }
 }
 
 private extension Store {
-    init?(from result: PlaceResult) {
-        guard let lat = result.geometry?.location.lat,
-              let lng = result.geometry?.location.lng
+    init?(fromNew result: NewPlaceResult, apiKey: String) {
+        guard let lat = result.location?.latitude,
+              let lng = result.location?.longitude
         else { return nil }
 
-        let apiKey = Bundle.main.object(forInfoDictionaryKey: "GoogleMapsAPIKey") as? String ?? ""
+        // 写真URLは Places API (New) のメディアエンドポイントを使用
         let photoURL: String? = result.photos?.first.map { photo in
-            "https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=\(photo.photoReference)&key=\(apiKey)"
+            "https://places.googleapis.com/v1/\(photo.name)/media?key=\(apiKey)&maxHeightPx=600"
         }
 
         self.init(
-            id: result.placeId,
-            name: result.name,
+            id: result.id,
+            name: result.displayName?.text ?? "",
             nameEn: nil,
             location: Store.Coordinate(latitude: lat, longitude: lng),
             category: StoreCategory(googleTypes: result.types ?? []),
             supportedPaymentMethods: [],
-            address: result.vicinity,
+            address: result.formattedAddress,
             addressEn: nil,
             photoURL: photoURL,
             registeredByUid: nil
@@ -97,20 +114,21 @@ private extension Store {
 private extension StoreCategory {
     init(googleTypes: [String]) {
         let t = Set(googleTypes)
-        if t.contains("convenience_store")                          { self = .convenienceStore }
-        else if t.contains("cafe")                                  { self = .cafe }
-        else if t.contains("bar")                                   { self = .bar }
-        else if t.contains("night_club")                            { self = .izakaya }
-        else if t.contains("meal_takeaway") || t.contains("meal_delivery") { self = .fastFood }
-        else if t.contains("supermarket") || t.contains("grocery_or_supermarket") { self = .supermarket }
-        else if t.contains("pharmacy") || t.contains("drugstore")   { self = .drugStore }
-        else if t.contains("lodging")                               { self = .hotel }
-        else if t.contains("restaurant") || t.contains("food")      { self = .restaurant }
-        else                                                         { self = .other }
+        if      t.contains("convenience_store")                               { self = .convenienceStore }
+        else if t.contains("cafe")                                            { self = .cafe }
+        else if t.contains("bar")                                             { self = .bar }
+        else if t.contains("night_club")                                      { self = .izakaya }
+        else if t.contains("meal_takeaway") || t.contains("meal_delivery")    { self = .fastFood }
+        else if t.contains("supermarket")  || t.contains("grocery_or_supermarket") { self = .supermarket }
+        else if t.contains("pharmacy")     || t.contains("drugstore")         { self = .drugStore }
+        else if t.contains("lodging")                                         { self = .hotel }
+        else if t.contains("restaurant")   || t.contains("food")              { self = .restaurant }
+        else                                                                   { self = .other }
     }
 }
 
-// MARK: - Mock fallback (development / no API key)
+// MARK: - Mock fallback
+
 private struct MockPlacesService {
     func mockStores(near coordinate: CLLocationCoordinate2D) -> [Store] {
         let lat = coordinate.latitude
@@ -120,40 +138,35 @@ private struct MockPlacesService {
                   location: .init(latitude: lat + 0.001, longitude: lng + 0.001),
                   category: .convenienceStore,
                   supportedPaymentMethods: ["paypay", "suica", "nanaco", "visa"],
-                  address: "東京都渋谷区道玄坂1-1-1",
-                  addressEn: "1-1-1 Dogenzaka, Shibuya, Tokyo",
+                  address: "（サンプルデータ）", addressEn: "(sample)",
                   photoURL: nil, registeredByUid: nil),
 
             Store(id: "mock_2", name: "スターバックス", nameEn: "Starbucks",
                   location: .init(latitude: lat - 0.001, longitude: lng - 0.001),
                   category: .cafe,
                   supportedPaymentMethods: ["visa", "mastercard", "suica"],
-                  address: "東京都渋谷区神南1-21-3",
-                  addressEn: "1-21-3 Jinnan, Shibuya, Tokyo",
+                  address: "（サンプルデータ）", addressEn: "(sample)",
                   photoURL: nil, registeredByUid: nil),
 
             Store(id: "mock_3", name: "マツモトキヨシ", nameEn: "Matsumoto Kiyoshi",
                   location: .init(latitude: lat + 0.002, longitude: lng - 0.001),
                   category: .drugStore,
                   supportedPaymentMethods: ["cash_only"],
-                  address: "東京都渋谷区宇田川町21-1",
-                  addressEn: "21-1 Udagawacho, Shibuya, Tokyo",
+                  address: "（サンプルデータ）", addressEn: "(sample)",
                   photoURL: nil, registeredByUid: nil),
 
             Store(id: "mock_4", name: "自動販売機", nameEn: "Vending Machine",
                   location: .init(latitude: lat - 0.002, longitude: lng + 0.002),
                   category: .vendingMachine,
                   supportedPaymentMethods: ["suica", "paypay"],
-                  address: "東京都渋谷区道玄坂2丁目",
-                  addressEn: "Dogenzaka 2-chome, Shibuya, Tokyo",
+                  address: "（サンプルデータ）", addressEn: "(sample)",
                   photoURL: nil, registeredByUid: nil),
 
             Store(id: "mock_5", name: "マクドナルド", nameEn: "McDonald's",
                   location: .init(latitude: lat - 0.0015, longitude: lng + 0.0015),
                   category: .fastFood,
                   supportedPaymentMethods: ["paypay", "suica", "visa"],
-                  address: "東京都渋谷区宇田川町29-3",
-                  addressEn: "29-3 Udagawacho, Shibuya, Tokyo",
+                  address: "（サンプルデータ）", addressEn: "(sample)",
                   photoURL: nil, registeredByUid: nil),
         ]
     }

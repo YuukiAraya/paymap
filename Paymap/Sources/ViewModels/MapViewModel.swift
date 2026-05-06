@@ -43,18 +43,27 @@ class MapViewModel: ObservableObject {
 
     // MARK: - Filtered stores (client-side)
     var filteredStores: [Store] {
-        guard activeFilter.isActive else { return stores }
-        return stores.filter { store in
-            if activeFilter.showFavoritesOnly, !store.isFavorited { return false }
-            if let cat = activeFilter.category, store.category != cat { return false }
-            if activeFilter.requireWifi, store.hasWifi != true { return false }
-            if activeFilter.requirePower, store.hasPower != true { return false }
-            if !activeFilter.paymentIds.isEmpty {
-                let supported = Set(store.supportedPaymentMethods)
-                if !activeFilter.paymentIds.isSubset(of: supported) { return false }
+        let base: [Store]
+        if activeFilter.isActive {
+            base = stores.filter { store in
+                if activeFilter.showFavoritesOnly, !store.isFavorited { return false }
+                if let cat = activeFilter.category, store.category != cat { return false }
+                if activeFilter.requireWifi, store.hasWifi != true { return false }
+                if activeFilter.requirePower, store.hasPower != true { return false }
+                if !activeFilter.paymentIds.isEmpty {
+                    let supported = Set(store.supportedPaymentMethods)
+                    if !activeFilter.paymentIds.isSubset(of: supported) { return false }
+                }
+                return true
             }
-            return true
+        } else {
+            base = stores
         }
+        // selectedStore は必ずマーカー表示（APIフェッチ前でもアイコンを出す）
+        if let selected = selectedStore, !base.contains(where: { $0.id == selected.id }) {
+            return base + [selected]
+        }
+        return base
     }
 
     // MARK: - Fetch stores (Firestore GeoQuery → mock fallback → offline cache)

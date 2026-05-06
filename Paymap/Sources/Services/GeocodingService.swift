@@ -1,87 +1,84 @@
 import Foundation
 import CoreLocation
 
+// CLGeocoder を使用した実装（Google Geocoding REST API の代替）
+// → GCP の 100% エラーを解消し、APIキー制限の影響を受けない
 struct GeocodingService {
-    private var apiKey: String {
-        Bundle.main.object(forInfoDictionaryKey: "GoogleMapsAPIKey") as? String ?? ""
-    }
 
-    // 座標 → 住所（逆ジオコーディング）
+    // MARK: - 逆ジオコーディング（座標 → 住所）
     func reverseGeocode(_ coordinate: CLLocationCoordinate2D, language: String = "ja") async -> String? {
-        let lat = coordinate.latitude
-        let lng = coordinate.longitude
-        guard let url = URL(string: "https://maps.googleapis.com/maps/api/geocode/json?latlng=\(lat),\(lng)&key=\(apiKey)&language=\(language)")
-        else { return nil }
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(GeocodingResponse.self, from: data)
-            return response.results.first?.formattedAddress
-        } catch { return nil }
+        guard let placemark = await clReverseGeocode(coordinate, locale: language) else { return nil }
+        return buildAddress(from: placemark, language: language)
     }
 
-    // 住所 → 英語表記に翻訳
-    func translateAddressToEnglish(_ japaneseAddress: String) async -> String? {
-        return await geocode(japaneseAddress, language: "en").flatMap { $0.formattedAddress }
-    }
-
-    // 住所 → 座標変換
+    // MARK: - 住所 → 座標
     func geocodeAddress(_ address: String) async -> CLLocationCoordinate2D? {
-        guard let result = await geocode(address, language: "ja") else { return nil }
-        return CLLocationCoordinate2D(latitude: result.lat, longitude: result.lng)
+        return await clGeocode(address, locale: "ja")?.location?.coordinate
     }
 
-    // 住所 → 座標 + 英語住所を同時取得
+    // MARK: - 住所 → 英語表記
+    func translateAddressToEnglish(_ japaneseAddress: String) async -> String? {
+        guard let placemark = await clGeocode(japaneseAddress, locale: "en") else { return nil }
+        return buildAddress(from: placemark, language: "en")
+    }
+
+    // MARK: - 住所 → 座標 + 英語住所
     func geocodeFull(_ address: String) async -> (coordinate: CLLocationCoordinate2D, addressEn: String?)? {
-        guard let ja = await geocode(address, language: "ja") else { return nil }
-        let addressEn = await geocode(address, language: "en")?.formattedAddress
-        return (CLLocationCoordinate2D(latitude: ja.lat, longitude: ja.lng), addressEn)
+        guard let placemark = await clGeocode(address, locale: "ja"),
+              let coord = placemark.location?.coordinate else { return nil }
+        let enPlacemark = await clGeocode(address, locale: "en")
+        let addressEn = enPlacemark.map { buildAddress(from: $0, language: "en") }
+        return (coord, addressEn)
     }
 
-    private struct GeoResult {
-        let lat: Double
-        let lng: Double
-        let formattedAddress: String
-    }
+    // MARK: - Private helpers
 
-    private func geocode(_ address: String, language: String) async -> GeoResult? {
-        guard !address.isEmpty,
-              let encoded = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://maps.googleapis.com/maps/api/geocode/json?address=\(encoded)&key=\(apiKey)&language=\(language)")
-        else { return nil }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(GeocodingResponse.self, from: data)
-            guard let first = response.results.first else { return nil }
-            return GeoResult(
-                lat: first.geometry.location.lat,
-                lng: first.geometry.location.lng,
-                formattedAddress: first.formattedAddress
-            )
-        } catch {
-            return nil
+    private func clGeocode(_ address: String, locale: String) async -> CLPlacemark? {
+        guard !address.isEmpty else { return nil }
+        let preferredLocale = Locale(identifier: locale == "en" ? "en_US" : "ja_JP")
+        return await withCheckedContinuation { continuation in
+            CLGeocoder().geocodeAddressString(
+                address,
+                in: nil,
+                preferredLocale: preferredLocale
+            ) { placemarks, _ in
+                continuation.resume(returning: placemarks?.first)
+            }
         }
     }
-}
 
-private struct GeocodingResponse: Decodable {
-    let results: [GeocodingResult]
-}
-
-private struct GeocodingResult: Decodable {
-    let formattedAddress: String
-    let geometry: GeocodingGeometry
-    enum CodingKeys: String, CodingKey {
-        case formattedAddress = "formatted_address"
-        case geometry
+    private func clReverseGeocode(_ coord: CLLocationCoordinate2D, locale: String) async -> CLPlacemark? {
+        let location = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+        let preferredLocale = Locale(identifier: locale == "en" ? "en_US" : "ja_JP")
+        return await withCheckedContinuation { continuation in
+            CLGeocoder().reverseGeocodeLocation(
+                location,
+                preferredLocale: preferredLocale
+            ) { placemarks, _ in
+                continuation.resume(returning: placemarks?.first)
+            }
+        }
     }
-}
 
-private struct GeocodingGeometry: Decodable {
-    let location: GeocodingLocation
-}
-
-private struct GeocodingLocation: Decodable {
-    let lat: Double
-    let lng: Double
+    private func buildAddress(from placemark: CLPlacemark, language: String) -> String {
+        if language == "en" {
+            let parts = [
+                placemark.subThoroughfare,
+                placemark.thoroughfare,
+                placemark.subLocality,
+                placemark.locality,
+                placemark.administrativeArea,
+            ].compactMap { $0 }
+            return parts.isEmpty ? (placemark.name ?? "") : parts.joined(separator: " ")
+        } else {
+            let parts = [
+                placemark.administrativeArea,
+                placemark.locality,
+                placemark.subLocality,
+                placemark.thoroughfare,
+                placemark.subThoroughfare,
+            ].compactMap { $0 }
+            return parts.isEmpty ? (placemark.name ?? "") : parts.joined()
+        }
+    }
 }

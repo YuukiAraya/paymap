@@ -219,21 +219,30 @@ struct MyRegisteredStoresView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(vm.stores) { store in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle().fill(store.category.color.opacity(0.2)).frame(width: 40, height: 40)
-                            Image(systemName: store.category.iconName)
-                                .foregroundColor(store.category.color)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(store.displayName(isEnglish: lm.isEnglish)).font(.subheadline).bold()
-                            Text(store.category.localizedName(lm.s))
-                                .font(.caption).foregroundColor(.secondary)
-                            if let address = store.displayAddress(isEnglish: lm.isEnglish) {
-                                Text(address).font(.caption2).foregroundColor(.secondary)
+                    Button(action: {
+                        NotificationCenter.default.post(
+                            name: .navigateToStore,
+                            object: nil,
+                            userInfo: ["store": store]
+                        )
+                    }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle().fill(store.category.color.opacity(0.2)).frame(width: 40, height: 40)
+                                Image(systemName: store.category.iconName)
+                                    .foregroundColor(store.category.color)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(store.displayName(isEnglish: lm.isEnglish)).font(.subheadline).bold()
+                                Text(store.category.localizedName(lm.s))
+                                    .font(.caption).foregroundColor(.secondary)
+                                if let address = store.displayAddress(isEnglish: lm.isEnglish) {
+                                    Text(address).font(.caption2).foregroundColor(.secondary)
+                                }
                             }
                         }
                     }
+                    .foregroundColor(.primary)
                 }
             }
         }

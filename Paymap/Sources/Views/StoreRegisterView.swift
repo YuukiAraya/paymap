@@ -3,7 +3,8 @@ import CoreLocation
 import GoogleMobileAds
 
 extension Notification.Name {
-    static let storeRegistered = Notification.Name("storeRegistered")
+    static let storeRegistered  = Notification.Name("storeRegistered")
+    static let navigateToStore  = Notification.Name("navigateToStore")
 }
 
 struct StoreRegisterView: View {
@@ -34,9 +35,14 @@ struct StoreRegisterView: View {
                 Section(header: Text(lm.s.addressRequired)) {
                     HStack {
                         TextField(lm.s.addressRequired, text: $viewModel.address)
-                        if !viewModel.address.isEmpty {
+                            .onChange(of: viewModel.address) { _ in
+                                viewModel.scheduleAddressGeocode()
+                            }
+                        if viewModel.isLocationConfirmed {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(Color.premiumEmerald)
+                        } else if viewModel.isAutoGeocoding {
+                            ProgressView().scaleEffect(0.7)
                         }
                     }
                     if viewModel.addressError {
@@ -65,7 +71,7 @@ struct StoreRegisterView: View {
                         ) { coord, resolvedAddress in
                             viewModel.confirmedCoordinate = coord
                             viewModel.isLocationConfirmed = true
-                            if resolvedAddress.isEmpty == false {
+                            if !resolvedAddress.isEmpty {
                                 viewModel.address = resolvedAddress
                             }
                         }
@@ -73,23 +79,39 @@ struct StoreRegisterView: View {
                     }
                 }
 
-                // MARK: 設備情報
+                // MARK: 設備情報（3状態：あり/なし/不明）
                 Section(header: Text(lm.s.facilitiesSection)) {
-                    Toggle(isOn: Binding(
-                        get: { viewModel.hasWifi == true },
-                        set: { viewModel.hasWifi = $0 ? true : false }
-                    )) {
+                    HStack {
                         Label(lm.s.hasWifiLabel, systemImage: "wifi")
+                            .foregroundColor(Color.premiumNavy)
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { FacilityState(viewModel.hasWifi) },
+                            set: { viewModel.hasWifi = $0.boolValue }
+                        )) {
+                            Text(lm.s.facilityYes).tag(FacilityState.available)
+                            Text(lm.s.facilityNo).tag(FacilityState.unavailable)
+                            Text(lm.s.facilityUnknown).tag(FacilityState.unknown)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 170)
                     }
-                    .tint(Color.premiumEmerald)
 
-                    Toggle(isOn: Binding(
-                        get: { viewModel.hasPower == true },
-                        set: { viewModel.hasPower = $0 ? true : false }
-                    )) {
+                    HStack {
                         Label(lm.s.hasPowerLabel, systemImage: "powerplug.fill")
+                            .foregroundColor(Color.premiumNavy)
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { FacilityState(viewModel.hasPower) },
+                            set: { viewModel.hasPower = $0.boolValue }
+                        )) {
+                            Text(lm.s.facilityYes).tag(FacilityState.available)
+                            Text(lm.s.facilityNo).tag(FacilityState.unavailable)
+                            Text(lm.s.facilityUnknown).tag(FacilityState.unknown)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 170)
                     }
-                    .tint(Color.premiumEmerald)
                 }
 
                 // MARK: 決済手段
@@ -180,11 +202,13 @@ class StoreRegisterViewModel: ObservableObject {
     @Published var confirmedCoordinate: CLLocationCoordinate2D? = nil
     @Published var isLocationConfirmed: Bool = false
     @Published var addressError: Bool = false
+    @Published var isAutoGeocoding: Bool = false
 
     private let storeService = StoreService()
     private let geocodingService = GeocodingService()
     private var interstitial: InterstitialAd?
     private let interstitialUnitID = "ca-app-pub-4490113823639458/8255863769"
+    private var geocodeTask: Task<Void, Never>?
 
     var canSubmit: Bool {
         !storeName.trimmingCharacters(in: .whitespaces).isEmpty
@@ -192,6 +216,29 @@ class StoreRegisterViewModel: ObservableObject {
     }
 
     init() { loadInterstitial() }
+
+    // MARK: - 住所入力に連動した自動ジオコーディング（1秒デバウンス）
+
+    func scheduleAddressGeocode() {
+        geocodeTask?.cancel()
+        isLocationConfirmed = false
+        let addr = address.trimmingCharacters(in: .whitespaces)
+        guard !addr.isEmpty else {
+            confirmedCoordinate = nil
+            isAutoGeocoding = false
+            return
+        }
+        geocodeTask = Task {
+            isAutoGeocoding = true
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            guard !Task.isCancelled else { return }
+            if let coord = await geocodingService.geocodeAddress(addr) {
+                confirmedCoordinate = coord
+                isLocationConfirmed = true
+            }
+            isAutoGeocoding = false
+        }
+    }
 
     func validateAddress() -> Bool {
         if address.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -291,5 +338,6 @@ class StoreRegisterViewModel: ObservableObject {
         confirmedCoordinate = nil
         isLocationConfirmed = false
         addressError = false
+        geocodeTask?.cancel()
     }
 }

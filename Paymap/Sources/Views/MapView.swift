@@ -122,6 +122,17 @@ struct MapView: View {
             longPressCoordinate = nil
             viewModel.fetchStores(in: locationManager.currentOrDefault)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToStore)) { notification in
+            guard let store = notification.userInfo?["store"] as? Store else { return }
+            let coord = CLLocationCoordinate2D(
+                latitude: store.location.latitude,
+                longitude: store.location.longitude)
+            withAnimation {
+                region = coord
+                viewModel.selectedStore = store
+            }
+            viewModel.fetchStores(in: coord)
+        }
         .sheet(isPresented: $showingFilter) {
             MapFilterView(filter: $viewModel.activeFilter)
                 .environmentObject(lm)
@@ -541,7 +552,8 @@ private struct FlowLayout: View {
 }
 
 // MARK: - Facility three-state (あり / なし / 不明)
-private enum FacilityState: String, CaseIterable, Identifiable {
+// StoreRegisterView でも共有するため internal スコープ
+enum FacilityState: String, CaseIterable, Identifiable {
     case available   = "あり"
     case unavailable = "なし"
     case unknown     = "不明"
