@@ -219,6 +219,24 @@ struct L10n {
     let powerAvailable: String
     let wifiUnavailable: String
     let powerUnavailable: String
+
+    // MARK: - Delete Store
+    let deleteStore: String
+    let deleteStoreConfirmTitle: String
+    let deleteStoreConfirmBody: String
+    let cannotDeleteTitle: String
+    let cannotDeleteBody: String
+
+    // MARK: - Error Report (誤り報告)
+    let reportErrorTitle: String
+    let reportErrorSelectReason: String
+    let reportErrorDuplicate: String
+    let reportErrorNotExist: String
+    let reportErrorWrongInfo: String
+    let reportErrorOther: String
+    let reportErrorSubmit: String
+    let reportErrorThanksTitle: String
+    let reportErrorThanksBody: String
 }
 
 // MARK: - Japanese
@@ -385,7 +403,21 @@ extension L10n {
         wifiAvailable: "フリーWiFi あり",
         powerAvailable: "電源 利用可",
         wifiUnavailable: "フリーWiFi なし",
-        powerUnavailable: "電源 なし"
+        powerUnavailable: "電源 なし",
+        deleteStore: "店舗を削除",
+        deleteStoreConfirmTitle: "この店舗を削除しますか？",
+        deleteStoreConfirmBody: "削除すると元に戻せません。",
+        cannotDeleteTitle: "削除できません",
+        cannotDeleteBody: "他のユーザーが情報を追加しているため削除できません。「誤り報告」で通報してください。",
+        reportErrorTitle: "誤り報告",
+        reportErrorSelectReason: "報告理由を選択してください",
+        reportErrorDuplicate: "重複した店舗",
+        reportErrorNotExist: "存在しない店舗",
+        reportErrorWrongInfo: "情報が間違っている",
+        reportErrorOther: "その他",
+        reportErrorSubmit: "報告する",
+        reportErrorThanksTitle: "報告を受け付けました",
+        reportErrorThanksBody: "ご報告ありがとうございます。3件以上の報告で管理者がレビューします。"
     )
 }
 
@@ -553,6 +585,20 @@ extension L10n {
         wifiAvailable: "Free WiFi Available",
         powerAvailable: "Power Outlets Available",
         wifiUnavailable: "No Free WiFi",
-        powerUnavailable: "No Power Outlets"
+        powerUnavailable: "No Power Outlets",
+        deleteStore: "Delete Store",
+        deleteStoreConfirmTitle: "Delete This Store?",
+        deleteStoreConfirmBody: "This action cannot be undone.",
+        cannotDeleteTitle: "Cannot Delete",
+        cannotDeleteBody: "Other users have added information to this store. Please use 'Report Error' instead.",
+        reportErrorTitle: "Report Error",
+        reportErrorSelectReason: "Select a reason",
+        reportErrorDuplicate: "Duplicate store",
+        reportErrorNotExist: "Store does not exist",
+        reportErrorWrongInfo: "Incorrect information",
+        reportErrorOther: "Other",
+        reportErrorSubmit: "Submit",
+        reportErrorThanksTitle: "Report Submitted",
+        reportErrorThanksBody: "Thank you for your report. Our team will review it after 3+ reports."
     )
 }

@@ -16,6 +16,7 @@ struct Store: Identifiable, Codable {
     var hasWifi: Bool?
     var hasPower: Bool?
     var isFavorited: Bool = false
+    var createdAt: Date? = nil
 
     struct Coordinate: Codable {
         let latitude: Double

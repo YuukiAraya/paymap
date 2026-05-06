@@ -17,6 +17,12 @@ define('UPLOAD_BASE_URL', 'https://coussinet.sakura.ne.jp/paymap/uploads/');
 // JWT シークレット（Firebase UID の簡易検証 or 独自認証用）
 define('JWT_SECRET', 'your_jwt_secret_here');
 
+// 管理者 Firebase UID リスト（削除制限を受けずに削除可能）
+// Firebase Console → Authentication → Users → UID をコピーして追加
+$ADMIN_UIDS = [
+    // 'YOUR_ADMIN_FIREBASE_UID_HERE',
+];
+
 // ============================================================
 // データベース接続
 // ============================================================
@@ -74,5 +80,6 @@ function storeRowToArray(array $row): array {
         'supportedPaymentMethods' => $row['confirmed_methods']
                                         ? explode(',', $row['confirmed_methods'])
                                         : [],
+        'createdAt'               => $row['created_at'] ?? null,
     ];
 }

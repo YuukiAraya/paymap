@@ -171,6 +171,20 @@ class MapViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Delete store
+    @MainActor
+    func deleteStore(storeId: String, uid: String) async throws {
+        try await storeService.deleteStore(storeId: storeId, uid: uid)
+        stores.removeAll { $0.id == storeId }
+        if selectedStore?.id == storeId { selectedStore = nil }
+    }
+
+    // MARK: - Report store error
+    @MainActor
+    func reportStoreError(storeId: String, uid: String, reason: String) async throws -> Int {
+        return try await storeService.reportStoreError(storeId: storeId, uid: uid, reason: reason)
+    }
+
     // MARK: - Update WiFi / Power info
     func updateStoreFacilities(storeId: String, hasWifi: Bool?, hasPower: Bool?) {
         Task {

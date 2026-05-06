@@ -31,6 +31,40 @@ class StoreService {
         return try JSONDecoder().decode(R.self, from: data)
     }
 
+    // MARK: - Delete store (本人24h以内 or 他更新0件 or 管理者)
+
+    func deleteStore(storeId: String, uid: String) async throws {
+        var comps = URLComponents(string: "\(kAPIBase)/stores.php")!
+        comps.queryItems = [
+            URLQueryItem(name: "store_id", value: storeId),
+            URLQueryItem(name: "uid", value: uid)
+        ]
+        guard let url = comps.url else { throw PaymapError.apiError("Bad URL") }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        if let http = resp as? HTTPURLResponse, http.statusCode == 403 {
+            let errRes = try? JSONDecoder().decode(DeleteErrorResponse.self, from: data)
+            if errRes?.error == "cannot_delete" {
+                throw PaymapError.cannotDelete
+            }
+            throw PaymapError.apiError(errRes?.error ?? "not_authorized")
+        }
+        let res = try JSONDecoder().decode(SuccessResponse.self, from: data)
+        if !res.success { throw PaymapError.apiError("delete_failed") }
+    }
+
+    // MARK: - Report store error (誤り報告)
+
+    func reportStoreError(storeId: String, uid: String, reason: String) async throws -> Int {
+        let res: ReportErrorResponse = try await post(
+            "stores.php",
+            body: ReportErrorBody(storeId: storeId, uid: uid, reason: reason),
+            action: "report_error"
+        )
+        return res.reportCount
+    }
+
     // MARK: - Fetch stores near a location
 
     func fetchStores(near latitude: Double, longitude: Double, radiusKm: Double = 20.0) async throws -> [Store] {
@@ -336,6 +370,7 @@ struct PaymentReport {
 enum PaymapError: LocalizedError {
     case notAuthenticated
     case apiError(String)
+    case cannotDelete
 
     private static var isEnglish: Bool {
         UserDefaults.standard.string(forKey: "appLanguage") == "en"
@@ -348,6 +383,8 @@ enum PaymapError: LocalizedError {
             return en ? "Please sign in to continue." : "ログインが必要です"
         case .apiError(let msg):
             return en ? "Server error: \(msg)" : "サーバーエラー: \(msg)"
+        case .cannotDelete:
+            return en ? "Cannot delete this store." : "この店舗は削除できません"
         }
     }
 }
@@ -371,10 +408,18 @@ private struct APIStore: Decodable {
     let hasWifi: Bool?
     let hasPower: Bool?
     let supportedPaymentMethods: [String]
+    let createdAt: String?
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 
     func toStore() -> Store? {
         guard let cat = StoreCategory(rawValue: category) else { return nil }
-        return Store(
+        var store = Store(
             id: id, name: name, nameEn: nameEn,
             location: .init(latitude: location.latitude, longitude: location.longitude),
             category: cat,
@@ -385,6 +430,10 @@ private struct APIStore: Decodable {
             hasWifi: hasWifi,
             hasPower: hasPower
         )
+        if let str = createdAt {
+            store.createdAt = APIStore.dateFormatter.date(from: str)
+        }
+        return store
     }
 }
 
@@ -518,6 +567,32 @@ private struct AwardBadgeBody: Encodable {
     enum CodingKeys: String, CodingKey {
         case uid
         case badgeId = "badge_id"
+    }
+}
+
+private struct DeleteErrorResponse: Decodable {
+    let success: Bool?
+    let error: String?
+}
+
+private struct ReportErrorBody: Encodable {
+    let storeId: String
+    let uid: String
+    let reason: String
+
+    enum CodingKeys: String, CodingKey {
+        case storeId = "store_id"
+        case uid, reason
+    }
+}
+
+private struct ReportErrorResponse: Decodable {
+    let success: Bool
+    let reportCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case reportCount = "report_count"
     }
 }
 

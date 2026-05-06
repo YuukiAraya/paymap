@@ -366,6 +366,7 @@ struct StoreDetailFullView: View {
     @EnvironmentObject var lm: LanguageManager
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showingReport = false
+    @State private var showingErrorReport = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -483,6 +484,14 @@ struct StoreDetailFullView: View {
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(PrimaryButtonStyle())
+
+                            // 誤り報告ボタン（全ユーザー向け）
+                            Button(action: { showingErrorReport = true }) {
+                                Label(lm.s.reportErrorTitle, systemImage: "flag")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            .foregroundColor(.orange)
                         }
                         .padding()
                     }
@@ -498,6 +507,11 @@ struct StoreDetailFullView: View {
             }
             .sheet(isPresented: $showingReport) {
                 ReportPaymentMethodView(store: store, viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingErrorReport) {
+                StoreErrorReportView(store: store)
+                    .environmentObject(authViewModel)
+                    .environmentObject(lm)
             }
         }
     }

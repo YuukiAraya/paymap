@@ -206,6 +206,12 @@ struct MyRegisteredStoresView: View {
     @EnvironmentObject var lm: LanguageManager
     @StateObject private var vm = MyStoresViewModel()
 
+    @State private var storeToDelete: Store? = nil
+    @State private var showingDeleteConfirm = false
+    @State private var showingCannotDelete = false
+    @State private var showingReportError = false
+    @State private var reportTargetStore: Store? = nil
+
     var body: some View {
         Group {
             if vm.isLoading {
@@ -243,6 +249,14 @@ struct MyRegisteredStoresView: View {
                         }
                     }
                     .foregroundColor(.primary)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            storeToDelete = store
+                            showingDeleteConfirm = true
+                        } label: {
+                            Label(lm.s.deleteStore, systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -250,6 +264,40 @@ struct MyRegisteredStoresView: View {
         .onAppear {
             if let uid = authViewModel.userProfile?.uid {
                 vm.fetchMyStores(uid: uid)
+            }
+        }
+        // 削除確認アラート
+        .alert(lm.s.deleteStoreConfirmTitle, isPresented: $showingDeleteConfirm, presenting: storeToDelete) { store in
+            Button(lm.s.deleteStore, role: .destructive) {
+                guard let uid = authViewModel.userProfile?.uid else { return }
+                Task {
+                    do {
+                        try await vm.deleteStore(store: store, uid: uid)
+                    } catch PaymapError.cannotDelete {
+                        reportTargetStore = store
+                        showingCannotDelete = true
+                    } catch {}
+                }
+            }
+            Button(lm.s.cancelButton, role: .cancel) {}
+        } message: { store in
+            Text("\(store.displayName(isEnglish: lm.isEnglish))\n\(lm.s.deleteStoreConfirmBody)")
+        }
+        // 削除不可アラート → 誤り報告に誘導
+        .alert(lm.s.cannotDeleteTitle, isPresented: $showingCannotDelete) {
+            Button(lm.s.reportErrorTitle) {
+                showingReportError = true
+            }
+            Button(lm.s.cancelButton, role: .cancel) {}
+        } message: {
+            Text(lm.s.cannotDeleteBody)
+        }
+        // 誤り報告シート
+        .sheet(isPresented: $showingReportError) {
+            if let store = reportTargetStore {
+                StoreErrorReportView(store: store)
+                    .environmentObject(authViewModel)
+                    .environmentObject(lm)
             }
         }
     }
@@ -271,6 +319,11 @@ class MyStoresViewModel: ObservableObject {
             }
             isLoading = false
         }
+    }
+
+    func deleteStore(store: Store, uid: String) async throws {
+        try await storeService.deleteStore(storeId: store.id, uid: uid)
+        stores.removeAll { $0.id == store.id }
     }
 }
 
