@@ -66,27 +66,31 @@ class MapViewModel: ObservableObject {
         return base
     }
 
-    // MARK: - Fetch stores (Firestore GeoQuery → mock fallback → offline cache)
+    // MARK: - Fetch stores (Sakura API → Google Places fallback → offline cache)
     @MainActor
     func fetchStores(in region: CLLocationCoordinate2D) {
         Task {
             do {
-                if FirebaseApp.app() != nil, Auth.auth().currentUser != nil {
-                    if !UserDefaults.standard.bool(forKey: "shinjukuSeeded") {
-                        do {
-                            try await storeService.seedShinjukuStores()
-                            UserDefaults.standard.set(true, forKey: "shinjukuSeeded")
-                        } catch {}
-                    }
-                    let result = try await storeService.fetchStores(
-                        near: region.latitude, longitude: region.longitude, radiusKm: 20.0)
-                    if !result.isEmpty {
-                        self.stores = applyFavoriteFlags(result)
-                        storeService.cacheStores(result)
-                        self.isOffline = false
-                        return
-                    }
+                // シードは認証済みのときのみ（初回1回）
+                if !UserDefaults.standard.bool(forKey: "shinjukuSeeded"),
+                   Auth.auth().currentUser != nil {
+                    do {
+                        try await storeService.seedShinjukuStores()
+                        UserDefaults.standard.set(true, forKey: "shinjukuSeeded")
+                    } catch {}
                 }
+
+                // Sakura API は認証不要 — 常に試みる
+                let result = try await storeService.fetchStores(
+                    near: region.latitude, longitude: region.longitude, radiusKm: 20.0)
+                if !result.isEmpty {
+                    self.stores = applyFavoriteFlags(result)
+                    storeService.cacheStores(result)
+                    self.isOffline = false
+                    return
+                }
+
+                // Sakura が空のときのみ Google Places にフォールバック
                 let places = try await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)
                 self.stores = applyFavoriteFlags(places)
                 self.isOffline = false
@@ -97,7 +101,8 @@ class MapViewModel: ObservableObject {
                     self.stores = applyFavoriteFlags(cached)
                     self.isOffline = true
                 } else {
-                    self.stores = applyFavoriteFlags((try? await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)) ?? [])
+                    self.stores = applyFavoriteFlags(
+                        (try? await placesService.fetchNearbyPlaces(coordinate: region, radius: 1000)) ?? [])
                 }
             }
         }
