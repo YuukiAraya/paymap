@@ -45,6 +45,9 @@ targets:
           UISceneConfigurations: {}
         # AdMob: テスト用App ID（本番リリース前に実際のIDに差し替える）
         GADApplicationIdentifier: "ca-app-pub-4490113823639458~5211821465"
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - "com.googleusercontent.apps.374457723430-go6kgj8mrk7bet5kmj1h7bd6uppbrlqr"
         SKAdNetworkItems:
           - SKAdNetworkIdentifier: "cstr6suwn9.skadnetwork"
           - SKAdNetworkIdentifier: "4fzdc2evr5.skadnetwork"
