@@ -27,6 +27,42 @@ struct MapView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
+                // 検索バー + フィルターボタン（上部）
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        TextField(lm.s.searchPlaceholder, text: $viewModel.searchQuery)
+                            .autocorrectionDisabled()
+                            .submitLabel(.search)
+                        if !viewModel.searchQuery.isEmpty {
+                            Button(action: { viewModel.searchQuery = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+
+                    Button(action: { showingFilter = true }) {
+                        ZStack {
+                            Circle()
+                                .fill(viewModel.activeFilter.isActive ? Color.premiumEmerald : Color.white)
+                                .frame(width: 44, height: 44)
+                                .shadow(radius: 4)
+                            Image(systemName: "slider.horizontal.3")
+                                .foregroundColor(viewModel.activeFilter.isActive ? .white : Color.premiumNavy)
+                        }
+                    }
+                }
+                .padding(.top, 60)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
                 // オフライン表示バナー
                 if viewModel.isOffline {
                     HStack {
@@ -83,27 +119,6 @@ struct MapView: View {
                 AdBannerContainer()
             }
             .zIndex(1)
-
-            // フィルターボタン（右上）
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: { showingFilter = true }) {
-                        ZStack {
-                            Circle()
-                                .fill(viewModel.activeFilter.isActive ? Color.premiumEmerald : Color.white)
-                                .frame(width: 44, height: 44)
-                                .shadow(radius: 4)
-                            Image(systemName: "slider.horizontal.3")
-                                .foregroundColor(viewModel.activeFilter.isActive ? .white : Color.premiumNavy)
-                        }
-                    }
-                    .padding(.top, 60)
-                    .padding(.trailing, 16)
-                }
-                Spacer()
-            }
-            .zIndex(2)
         }
         .onAppear {
             let coord = locationManager.currentOrDefault
@@ -115,7 +130,9 @@ struct MapView: View {
         }
         .onChange(of: locationManager.location) { loc in
             guard let loc else { return }
-            region = loc
+            if viewModel.selectedStore == nil && longPressCoordinate == nil {
+                region = loc
+            }
             viewModel.fetchStores(in: loc)
         }
         .onReceive(NotificationCenter.default.publisher(for: .storeRegistered)) { _ in

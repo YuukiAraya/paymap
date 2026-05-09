@@ -5,7 +5,7 @@ import Foundation
 class PurchaseManager: ObservableObject {
     static let premiumProductID = "com.csn.Paymap.premium"
 
-    @Published var isPremium = false
+    @Published var isPremium = true  // オープン期間中は全員プレミアム
     @Published var product: Product?
     @Published var isPurchasing = false
     @Published var errorMessage: String?
@@ -34,14 +34,7 @@ class PurchaseManager: ObservableObject {
     }
 
     func refreshPremiumStatus() async {
-        var active = false
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let tx) = result, tx.productID == Self.premiumProductID {
-                active = true
-                break
-            }
-        }
-        isPremium = active
+        isPremium = true  // オープン期間中は全員プレミアム
     }
 
     func purchase() async {

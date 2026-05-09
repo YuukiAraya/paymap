@@ -180,6 +180,9 @@ struct L10n {
     let advancedFilterPremium: String
     let filterFavoritesOnly: String
 
+    // MARK: - Map Search
+    let searchPlaceholder: String
+
     // MARK: - Long Press Register
     let longPressHint: String
     let registerHereTitle: String
@@ -376,6 +379,7 @@ extension L10n {
         filterAllCategories: "すべてのカテゴリ",
         advancedFilterPremium: "高度な絞り込みはプレミアム会員限定です",
         filterFavoritesOnly: "お気に入りのみ表示",
+        searchPlaceholder: "店舗名・住所で検索",
         longPressHint: "長押しで店舗を登録できます",
         registerHereTitle: "この場所に店舗を登録",
         registerHereButton: "ここに登録する",
@@ -558,6 +562,7 @@ extension L10n {
         filterAllCategories: "All Categories",
         advancedFilterPremium: "Advanced filters require Premium",
         filterFavoritesOnly: "Favorites Only",
+        searchPlaceholder: "Search by name or address",
         longPressHint: "Long-press on the map to register a store",
         registerHereTitle: "Register Store Here",
         registerHereButton: "Register Here",

@@ -14,6 +14,7 @@ struct StoreRegisterView: View {
     @StateObject private var viewModel = StoreRegisterViewModel()
     @State private var showingSuccess = false
     @State private var showingAddressPicker = false
+    @Environment(\.dismiss) private var dismiss
 
     var initialCoordinate: CLLocationCoordinate2D? = nil
 
@@ -152,7 +153,10 @@ struct StoreRegisterView: View {
             }
             .navigationTitle(lm.s.registerStoreTitle)
             .alert(lm.s.registrationCompleteTitle, isPresented: $showingSuccess) {
-                Button(lm.s.okButton) { viewModel.reset() }
+                Button(lm.s.okButton) {
+                    viewModel.reset()
+                    dismiss()
+                }
             } message: {
                 Text(lm.s.registrationCompleteBody(viewModel.storeName))
             }
@@ -165,6 +169,7 @@ struct StoreRegisterView: View {
                 if let coord = initialCoordinate {
                     viewModel.confirmedCoordinate = coord
                     viewModel.isLocationConfirmed = true
+                    viewModel.reverseGeocodeInitialCoordinate(coord)
                 }
             }
         }
@@ -218,6 +223,16 @@ class StoreRegisterViewModel: ObservableObject {
     init() { loadInterstitial() }
 
     // MARK: - 住所入力に連動した自動ジオコーディング（1秒デバウンス）
+
+    func reverseGeocodeInitialCoordinate(_ coord: CLLocationCoordinate2D) {
+        Task {
+            isAutoGeocoding = true
+            if let addr = await geocodingService.reverseGeocode(coord) {
+                address = addr
+            }
+            isAutoGeocoding = false
+        }
+    }
 
     func scheduleAddressGeocode() {
         geocodeTask?.cancel()

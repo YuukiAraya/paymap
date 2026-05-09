@@ -33,6 +33,7 @@ class MapViewModel: ObservableObject {
     @Published var activeFilter = StoreFilter()
     @Published var isOffline: Bool = false
     @Published var favoriteStoreIds: Set<String> = []
+    @Published var searchQuery: String = ""
 
     private let storeService = StoreService()
     private let placesService: PlacesServiceProtocol
@@ -43,7 +44,7 @@ class MapViewModel: ObservableObject {
 
     // MARK: - Filtered stores (client-side)
     var filteredStores: [Store] {
-        let base: [Store]
+        var base: [Store]
         if activeFilter.isActive {
             base = stores.filter { store in
                 if activeFilter.showFavoritesOnly, !store.isFavorited { return false }
@@ -59,6 +60,17 @@ class MapViewModel: ObservableObject {
         } else {
             base = stores
         }
+
+        let trimmed = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        if !trimmed.isEmpty {
+            base = base.filter { store in
+                store.name.lowercased().contains(trimmed)
+                || (store.nameEn?.lowercased().contains(trimmed) ?? false)
+                || (store.address?.lowercased().contains(trimmed) ?? false)
+                || (store.addressEn?.lowercased().contains(trimmed) ?? false)
+            }
+        }
+
         // selectedStore は必ずマーカー表示（APIフェッチ前でもアイコンを出す）
         if let selected = selectedStore, !base.contains(where: { $0.id == selected.id }) {
             return base + [selected]
