@@ -108,7 +108,8 @@ class StoreService {
     // MARK: - User profile
 
     func fetchOrCreateUser(uid: String, displayName: String, email: String) async throws -> UserData {
-        if let res: UserProfileResponse = try? await get("users.php", query: ["uid": uid]) {
+        if let res: UserProfileResponse = try? await get("users.php", query: ["uid": uid]),
+           res.uid != nil {
             return UserData(
                 totalContributions: res.totalContributions ?? 0,
                 badges: res.badges ?? [],

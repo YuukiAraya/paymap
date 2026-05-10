@@ -18,7 +18,10 @@ struct GoogleMapView: UIViewRepresentable {
         func mapView(_ mapView: GMSMapView, didTap marker: GMSMarker) -> Bool {
             if let storeId = marker.userData as? String,
                let store = parent.stores.first(where: { $0.id == storeId }) {
-                withAnimation(.spring()) { parent.selectedStore = store }
+                withAnimation(.spring()) {
+                    parent.selectedStore = store
+                    parent.region = store.clLocationCoordinate
+                }
             }
             return true
         }

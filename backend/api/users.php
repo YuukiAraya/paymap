@@ -103,6 +103,8 @@ if ($method === 'POST' && $action === 'toggle_favorite') {
 
     $pdo = getDB();
     if ($isFavorite) {
+        // ユーザーが未登録の場合は自動作成（外部キー制約を満たすため）
+        $pdo->prepare("INSERT IGNORE INTO users (uid) VALUES (?)")->execute([$uid]);
         $pdo->prepare("INSERT IGNORE INTO user_favorites (uid, store_id) VALUES (?, ?)")
             ->execute([$uid, $storeId]);
     } else {
