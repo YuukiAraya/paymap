@@ -13,6 +13,7 @@ struct MapView: View {
     @State private var showingFilter = false
     @State private var showingRegisterFromLongPress = false
     @State private var hasAutocentered = false
+    @State private var hasAppearedOnce = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -122,9 +123,12 @@ struct MapView: View {
             .zIndex(1)
         }
         .onAppear {
-            let coord = locationManager.currentOrDefault
-            region = coord
-            viewModel.fetchStores(in: coord)
+            if !hasAppearedOnce {
+                hasAppearedOnce = true
+                let coord = locationManager.currentOrDefault
+                region = coord
+                viewModel.fetchStores(in: coord)
+            }
             if let uid = authViewModel.userProfile?.uid {
                 viewModel.loadFavorites(uid: uid)
             }
@@ -138,8 +142,9 @@ struct MapView: View {
             viewModel.fetchStores(in: loc)
         }
         .onReceive(NotificationCenter.default.publisher(for: .storeRegistered)) { _ in
+            let fetchCoord = longPressCoordinate ?? region
             longPressCoordinate = nil
-            viewModel.fetchStores(in: locationManager.currentOrDefault)
+            viewModel.fetchStores(in: fetchCoord)
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToStore)) { notification in
             guard let store = notification.userInfo?["store"] as? Store else { return }
