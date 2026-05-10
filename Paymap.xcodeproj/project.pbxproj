@@ -46,6 +46,7 @@
 /* Begin PBXFileReference section */
 		01E00FA29ACC24A46E509F03 /* Pods-Paymap.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Paymap.debug.xcconfig"; path = "Target Support Files/Pods-Paymap/Pods-Paymap.debug.xcconfig"; sourceTree = "<group>"; };
 		04F7ACC8B90FF2AEFCFEF676 /* ContributionRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionRulesView.swift; sourceTree = "<group>"; };
+		0C76B0A92FB0DB1E0005682B /* Paymap.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Paymap.entitlements; sourceTree = "<group>"; };
 		0FD6882EB5A5B4698AC0A682 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		16A1A93A74CC89ED97381C59 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		18CF46294E1916D937337F1C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -72,7 +73,7 @@
 		CA26E0319F61C56760E3DB04 /* BannerAdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerAdView.swift; sourceTree = "<group>"; };
 		D3261A2EEB5116E43246BBB3 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		D3B530BB4A2565249901E8AA /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
-		D834DC278F15DA9DDCB4501A /* Paymap.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Paymap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D834DC278F15DA9DDCB4501A /* Paymap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Paymap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E20C2C14D846FF91E1E01361 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		F0F01FACF79F649731B1EA8E /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		FA261E1D694B5467B1F553F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -151,7 +152,6 @@
 				01E00FA29ACC24A46E509F03 /* Pods-Paymap.debug.xcconfig */,
 				95FDEAF6E64B627EA46AF6C5 /* Pods-Paymap.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -197,6 +197,7 @@
 		F26291AE041FEBBA198561BC /* Paymap */ = {
 			isa = PBXGroup;
 			children = (
+				0C76B0A92FB0DB1E0005682B /* Paymap.entitlements */,
 				1BE8037535148130E1463ABD /* Assets.xcassets */,
 				18CF46294E1916D937337F1C /* GoogleService-Info.plist */,
 				B09BD18FCDB9179DCCD4E477 /* Sources */,
@@ -259,8 +260,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 1FD711EE85DB87E9F39C4EBD /* Build configuration list for PBXProject "Paymap" */;
 			developmentRegion = en;
@@ -328,9 +327,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Paymap/Pods-Paymap-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Paymap/Pods-Paymap-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -437,8 +440,10 @@
 			baseConfigurationReference = 01E00FA29ACC24A46E509F03 /* Pods-Paymap.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Paymap/Paymap.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W45DJ7XXL5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Paymap/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -458,8 +463,10 @@
 			baseConfigurationReference = 95FDEAF6E64B627EA46AF6C5 /* Pods-Paymap.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Paymap/Paymap.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W45DJ7XXL5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Paymap/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

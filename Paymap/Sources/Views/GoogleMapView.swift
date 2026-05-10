@@ -34,6 +34,7 @@ struct GoogleMapView: UIViewRepresentable {
             withAnimation(.spring()) {
                 parent.selectedStore = nil
                 parent.longPressCoordinate = coordinate
+                parent.region = coordinate
             }
         }
     }

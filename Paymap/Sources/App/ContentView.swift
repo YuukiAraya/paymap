@@ -19,8 +19,12 @@ struct ContentView: View {
                 .tag(2)
         }
         .tint(Color.premiumEmerald)
-        // 登録店舗一覧からタップ → マップタブへ自動遷移
+        // 登録店舗一覧 / お気に入りからタップ → マップタブへ自動遷移
         .onReceive(NotificationCenter.default.publisher(for: .navigateToStore)) { _ in
+            selectedTab = 0
+        }
+        // 店舗登録完了 → マップタブへ自動遷移
+        .onReceive(NotificationCenter.default.publisher(for: .storeRegistered)) { _ in
             selectedTab = 0
         }
     }

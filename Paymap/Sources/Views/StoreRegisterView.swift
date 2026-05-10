@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreLocation
 import GoogleMobileAds
+import PhotosUI
 
 extension Notification.Name {
     static let storeRegistered  = Notification.Name("storeRegistered")
@@ -29,6 +30,35 @@ struct StoreRegisterView: View {
                         ForEach(StoreCategory.allCases, id: \.self) { category in
                             Label(category.localizedName(lm.s), systemImage: category.iconName).tag(category)
                         }
+                    }
+                }
+
+                // MARK: 外観写真（任意）
+                Section(header: Text(lm.s.storePhotoSection)) {
+                    PhotosPicker(
+                        selection: $viewModel.selectedPhotoItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        HStack {
+                            Image(systemName: "camera.fill")
+                                .foregroundColor(Color.premiumNavy)
+                            Text(viewModel.selectedPhotoData != nil ? lm.s.changePhoto : lm.s.addPhoto)
+                                .foregroundColor(Color.premiumNavy)
+                            Spacer()
+                            if viewModel.selectedPhotoData != nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(Color.premiumEmerald)
+                            }
+                        }
+                    }
+                    if let data = viewModel.selectedPhotoData, let uiImage = UIImage(data: data) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 200)
+                            .cornerRadius(8)
+                            .padding(.vertical, 4)
                     }
                 }
 
@@ -152,6 +182,9 @@ struct StoreRegisterView: View {
                 }
             }
             .navigationTitle(lm.s.registerStoreTitle)
+            .onChange(of: viewModel.selectedPhotoItem) { item in
+                Task { await viewModel.loadSelectedPhoto(item) }
+            }
             .alert(lm.s.registrationCompleteTitle, isPresented: $showingSuccess) {
                 Button(lm.s.okButton) {
                     viewModel.reset()
@@ -208,8 +241,11 @@ class StoreRegisterViewModel: ObservableObject {
     @Published var isLocationConfirmed: Bool = false
     @Published var addressError: Bool = false
     @Published var isAutoGeocoding: Bool = false
+    @Published var selectedPhotoItem: PhotosPickerItem? = nil
+    @Published var selectedPhotoData: Data? = nil
 
     private let storeService = StoreService()
+    private let apiBase = "https://coussinet.sakura.ne.jp/paymap/api"
     private let geocodingService = GeocodingService()
     private var interstitial: InterstitialAd?
     private let interstitialUnitID = "ca-app-pub-4490113823639458/8255863769"
@@ -221,6 +257,15 @@ class StoreRegisterViewModel: ObservableObject {
     }
 
     init() { loadInterstitial() }
+
+    // MARK: - 写真読み込み
+
+    func loadSelectedPhoto(_ item: PhotosPickerItem?) async {
+        guard let item else { selectedPhotoData = nil; return }
+        if let data = try? await item.loadTransferable(type: Data.self) {
+            selectedPhotoData = data
+        }
+    }
 
     // MARK: - 住所入力に連動した自動ジオコーディング（1秒デバウンス）
 
@@ -335,6 +380,14 @@ class StoreRegisterViewModel: ObservableObject {
 
         do {
             try await storeService.upsertStore(newStore)
+            if let photoData = selectedPhotoData {
+                let compressed = UIImage(data: photoData)?.jpegData(compressionQuality: 0.8) ?? photoData
+                _ = try? await storeService.uploadStorePhoto(
+                    storeId: newStore.id,
+                    imageData: compressed,
+                    uploadBaseURL: apiBase
+                )
+            }
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -353,6 +406,8 @@ class StoreRegisterViewModel: ObservableObject {
         confirmedCoordinate = nil
         isLocationConfirmed = false
         addressError = false
+        selectedPhotoItem = nil
+        selectedPhotoData = nil
         geocodeTask?.cancel()
     }
 }
