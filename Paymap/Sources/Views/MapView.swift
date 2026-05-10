@@ -12,6 +12,7 @@ struct MapView: View {
     @State private var longPressCoordinate: CLLocationCoordinate2D? = nil
     @State private var showingFilter = false
     @State private var showingRegisterFromLongPress = false
+    @State private var hasAutocentered = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -130,8 +131,9 @@ struct MapView: View {
         }
         .onChange(of: locationManager.location) { loc in
             guard let loc else { return }
-            if viewModel.selectedStore == nil && longPressCoordinate == nil {
+            if !hasAutocentered {
                 region = loc
+                hasAutocentered = true
             }
             viewModel.fetchStores(in: loc)
         }
