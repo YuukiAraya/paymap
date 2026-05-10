@@ -17,26 +17,41 @@ struct FavoritesView: View {
         .navigationTitle(lm.s.favoritesTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if purchaseManager.isPremium, let uid = authViewModel.userProfile?.uid {
-                vm.fetch(uid: uid)
+            if let uid = authViewModel.userProfile?.uid {
+                Task { await vm.fetch(uid: uid) }
             }
+        }
+        .onChange(of: authViewModel.userProfile?.uid) { uid in
+            guard let uid else { return }
+            Task { await vm.fetch(uid: uid) }
         }
     }
 
     private var content: some View {
-        Group {
+        List {
             if vm.isLoading {
-                ProgressView(lm.s.loadingLabel)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if vm.stores.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "heart.slash")
-                        .font(.system(size: 48)).foregroundColor(.secondary)
-                    Text(lm.s.favoritesEmpty).foregroundColor(.secondary)
+                HStack {
+                    Spacer()
+                    ProgressView(lm.s.loadingLabel)
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            } else if vm.stores.isEmpty {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "heart.slash")
+                            .font(.system(size: 48)).foregroundColor(.secondary)
+                        Text(lm.s.favoritesEmpty).foregroundColor(.secondary)
+                    }
+                    .padding(.top, 80)
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             } else {
-                List(vm.stores) { store in
+                ForEach(vm.stores) { store in
                     HStack(spacing: 12) {
                         ZStack {
                             Circle().fill(store.category.color.opacity(0.2)).frame(width: 44, height: 44)
@@ -66,6 +81,11 @@ struct FavoritesView: View {
                         }
                     }
                 }
+            }
+        }
+        .refreshable {
+            if let uid = authViewModel.userProfile?.uid {
+                await vm.fetch(uid: uid)
             }
         }
     }
@@ -101,16 +121,14 @@ class FavoritesViewModel: ObservableObject {
     @Published var isLoading = false
     private let storeService = StoreService()
 
-    func fetch(uid: String) {
+    func fetch(uid: String) async {
         isLoading = true
-        Task {
-            do {
-                stores = try await storeService.fetchFavoriteStores(uid: uid)
-            } catch {
-                stores = []
-            }
-            isLoading = false
+        do {
+            stores = try await storeService.fetchFavoriteStores(uid: uid)
+        } catch {
+            // エラー時は既存データを保持（空にしない）
         }
+        isLoading = false
     }
 
     func removeFavorite(store: Store, uid: String) {

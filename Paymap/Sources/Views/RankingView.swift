@@ -14,35 +14,45 @@ struct RankingView: View {
     ]
 
     var body: some View {
-        Group {
+        List {
             if vm.isLoading {
-                ProgressView(lm.s.loadingLabel)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                HStack {
+                    Spacer()
+                    ProgressView(lm.s.loadingLabel)
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             } else if vm.entries.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 48)).foregroundColor(.secondary)
-                    Text(lm.s.rankingEmpty).foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(vm.entries) { entry in
-                        RankingRow(
-                            entry: entry,
-                            isCurrentUser: entry.uid == authViewModel.userProfile?.uid,
-                            badgeCatalog: badgeCatalog,
-                            pointsLabel: lm.s.rankingPoints,
-                            youLabel: lm.s.rankingYou
-                        )
+                HStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 48)).foregroundColor(.secondary)
+                        Text(lm.s.rankingEmpty).foregroundColor(.secondary)
                     }
+                    .padding(.top, 80)
+                    Spacer()
                 }
-                .listStyle(.plain)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            } else {
+                ForEach(vm.entries) { entry in
+                    RankingRow(
+                        entry: entry,
+                        isCurrentUser: entry.uid == authViewModel.userProfile?.uid,
+                        badgeCatalog: badgeCatalog,
+                        pointsLabel: lm.s.rankingPoints,
+                        youLabel: lm.s.rankingYou
+                    )
+                }
             }
         }
+        .listStyle(.plain)
+        .refreshable { await vm.fetch() }
         .navigationTitle(lm.s.rankingTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { vm.fetch() }
+        .onAppear { Task { await vm.fetch() } }
     }
 }
 
@@ -118,16 +128,14 @@ class RankingViewModel: ObservableObject {
     @Published var isLoading = false
     private let storeService = StoreService()
 
-    func fetch() {
+    func fetch() async {
         guard !isLoading else { return }
         isLoading = true
-        Task {
-            do {
-                entries = try await storeService.fetchTopUsers(limit: 20)
-            } catch {
-                entries = []
-            }
-            isLoading = false
+        do {
+            entries = try await storeService.fetchTopUsers(limit: 20)
+        } catch {
+            // エラー時は既存データを保持
         }
+        isLoading = false
     }
 }

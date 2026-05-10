@@ -117,6 +117,9 @@ struct ProfileView: View {
                         }
                     }
                 }
+                .refreshable {
+                    await authViewModel.refreshProfile()
+                }
                 .navigationTitle(lm.s.myPageTitle)
                 .sheet(isPresented: $showingEditProfile) {
                     EditProfileView()
@@ -213,18 +216,30 @@ struct MyRegisteredStoresView: View {
     @State private var reportTargetStore: Store? = nil
 
     var body: some View {
-        Group {
+        List {
             if vm.isLoading {
-                ProgressView(lm.s.loadingLabel).frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if vm.stores.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "mappin.slash")
-                        .font(.system(size: 48)).foregroundColor(.secondary)
-                    Text(lm.s.myStoresEmpty).foregroundColor(.secondary)
+                HStack {
+                    Spacer()
+                    ProgressView(lm.s.loadingLabel)
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            } else if vm.stores.isEmpty {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "mappin.slash")
+                            .font(.system(size: 48)).foregroundColor(.secondary)
+                        Text(lm.s.myStoresEmpty).foregroundColor(.secondary)
+                    }
+                    .padding(.top, 80)
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             } else {
-                List(vm.stores) { store in
+                ForEach(vm.stores) { store in
                     Button(action: {
                         NotificationCenter.default.post(
                             name: .navigateToStore,
@@ -260,10 +275,15 @@ struct MyRegisteredStoresView: View {
                 }
             }
         }
+        .refreshable {
+            if let uid = authViewModel.userProfile?.uid {
+                await vm.fetchMyStores(uid: uid)
+            }
+        }
         .navigationTitle(lm.s.myStoresTitle)
         .onAppear {
             if let uid = authViewModel.userProfile?.uid {
-                vm.fetchMyStores(uid: uid)
+                Task { await vm.fetchMyStores(uid: uid) }
             }
         }
         // 削除確認アラート
@@ -309,16 +329,14 @@ class MyStoresViewModel: ObservableObject {
     @Published var isLoading = false
     private let storeService = StoreService()
 
-    func fetchMyStores(uid: String) {
+    func fetchMyStores(uid: String) async {
         isLoading = true
-        Task {
-            do {
-                stores = try await storeService.fetchStoresByUser(uid: uid)
-            } catch {
-                stores = []
-            }
-            isLoading = false
+        do {
+            stores = try await storeService.fetchStoresByUser(uid: uid)
+        } catch {
+            // エラー時は既存データを保持
         }
+        isLoading = false
     }
 
     func deleteStore(store: Store, uid: String) async throws {

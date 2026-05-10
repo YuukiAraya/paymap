@@ -204,6 +204,13 @@ class AuthViewModel: NSObject, ObservableObject {
         } catch { print("checkExplorerBadge error: \(error)") }
     }
 
+    // MARK: - Refresh Profile
+    func refreshProfile() async {
+        guard FirebaseApp.app() != nil,
+              let user = Auth.auth().currentUser else { return }
+        await loadOrCreateProfile(for: user)
+    }
+
     // MARK: - Sign Out
     func signOut() {
         try? Auth.auth().signOut()
